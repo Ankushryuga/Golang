@@ -61,3 +61,24 @@
     func printSlice(x []int){
        fmt.Printf("len = %d cap = %d slice = %v\n", len(x), cap(x),x)
     }
+
+
+## Slice of Slices:
+        =>var matrix [][]int
+        // Method 1: Literal initialization
+            grid := [][]int{
+               {4, 5, 6},       // First row (slice)
+               {7, 8},          // Second row (can be different length)
+            }
+            // Method 2: Using make()
+            rows := 3
+            matrix := make([][]int, rows)      // Outer slice
+            for i := range matrix {
+               matrix[i] = make([]int, 2)     // Each row has 2 columns (can vary)
+            }
+# Initialize a slice of slices:
+
+            matrix := make([][]int, 3) // Create an outer slice with 3 inner slices
+            for i := range matrix {
+                matrix[i] = make([]int, 4) // Each inner slice has 4 elements
+            }
