@@ -324,3 +324,36 @@ etc.
             
                 fmt.Println("Cube of", x, "is", y) 
             }
+
+
+
+
+
+## Methods with Pointer Receiver:
+        =>You can create a method that can havepointer receivers. This approach reflects the changes done in the method in the caller.
+
+# Example:
+        =>
+        package main
+        import "fmt"
+        
+        type student struct {
+            grade string
+        }
+        
+        // Method with pointer receiver to modify data
+        func (s *student) updateGrade(newGrade string) {
+            s.grade = newGrade
+        }
+        
+        func main() {
+            s := student{grade: "B"}
+            
+            fmt.Println("Before:", s.grade)
+            
+            // Calling the method to update the grade
+            s.updateGrade("A")
+            
+            fmt.Println("After:", s.grade)
+        }
+
