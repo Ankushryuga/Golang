@@ -101,3 +101,53 @@ etc.
                a, b := swap("Mahesh", "Kumar")
                fmt.Println(a, b)
             }
+
+
+## Function Usage:
+        => A function can be used in the following ways:
+            1. Function as value: can be created on the fly and can be used as values.
+            2 Function Closures: are anonymous functions and can be used in dynamic programming
+            3. Method: are special function with a receiver.
+
+
+# Function as value:
+        =>
+        create a functions on the fly and use them as values, 
+
+        Example:
+        func main(){
+            /* declare a function variable.*/
+            getSquareRoot := func(x float64) float64 {
+                return math.Sqrt(x)
+            }
+            //use the function.
+            fmt.Println(getSquareRoot(9))
+        }
+
+
+# Assigning a function to a variables:
+        =>
+        func addTwoNumbers(a int, b int) int {
+            return a+b
+        }
+        func main(){
+            //assign the function to a variable.
+            sum := addTwoNumbers
+            result := sum(100, 200)
+            fmt.Println("sum: ", result);
+        }
+
+# Passing a function as an argument:
+        =>
+        func calculation (x int, y int, op func(int, int) int) int {
+            return op(x, y)
+        }
+
+        func multiplyNumbers(x int, y int) int {
+            return x*y
+        }
+
+        func main(){
+            result := calculation(2, 4, multiplyNumbers)
+            fmt.Println("Result", result)
+        }
