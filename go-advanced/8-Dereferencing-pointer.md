@@ -40,3 +40,18 @@ func main() {
    fmt.Println("Name=", p.name)
    fmt.Println("Age=", (*p).age)
 }
+
+## Passing and Dereferencing Pointers:
+    => 
+        package main
+        import "fmt"
+        
+        func updateValue(val *int) {
+           *val = 100
+        }
+        
+        func main() {
+           num := 25
+           updateValue(&num)
+           fmt.Println("Updated Value=", num)
+        }
