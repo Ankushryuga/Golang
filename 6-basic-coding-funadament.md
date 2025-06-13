@@ -151,3 +151,176 @@ etc.
             result := calculation(2, 4, multiplyNumbers)
             fmt.Println("Result", result)
         }
+
+
+## Returning a funciton as a value:
+        =>
+        A function can also return a function as a value in Go, it is useful when you want to return an expression calculated by creating any function.
+
+
+# example:
+        => 
+        func calculate(facotr int) func (int) int {
+            return func (value int) int {
+                return factor * value
+            } 
+        } 
+        func main(){
+            multiply := calculate(2)
+            result := multiply(20)
+            fmt.Println("result: ", result)
+        }
+        
+
+
+## Function Closure:
+    =>
+    Function closure: it's a function value that references variable from outside its body, the closures bind these variable and make them accessible even after closing the outer function.
+
+# Creating closure:
+    A closure is created when an inner function captures and retains access to the variables of its enclosing function. You can create a closure by following:
+        => 
+        counter := func() func() int {
+            count := 0
+            return func() int {
+                count++
+                return count
+            }
+        }
+
+        //use:
+        increment := counter()
+
+        => counter function defines a local variable count, and the returned inner function, which will be known as closure, has access to count and modifies it on each call.
+
+        =>
+            package main
+            import "fmt"
+            
+            func main() {
+                // First, define an outer function
+                updateCounter := func() func() int {
+                    // define a local variable inside the function
+                    count := 100
+                    return func() int {
+                        count++
+                        return count
+                    }
+                }
+            
+                // Now, creating a closure
+                increment := updateCounter()
+            
+                // Using (calling) the closure
+                fmt.Println(increment())
+                fmt.Println(increment())
+            }
+
+# Passing values into closures:
+    =>
+        package main
+        import "fmt"
+        
+        func main() {
+            // Define an outer function that accepts a value
+            updateCounter := func(initial int) func() int {
+                count := initial // Initialize count with the passed value
+                return func() int {
+                    count++
+                    return count
+                }
+            }
+        
+            // Create a closure with an initial value
+            inc_x := updateCounter(100)
+        
+            // Use the closure
+            fmt.Println(inc_x())
+            fmt.Println(inc_x())
+        
+            // Create another closure with an initial value
+            inc_y := updateCounter(200)
+        
+            // Use the closure
+            fmt.Println(inc_y())
+            fmt.Println(inc_y())    
+        }
+
+
+
+## Method:
+        =>
+        Go programming language supports special types of functions called methods. In method declaration syntax, a "receiver" is present to represent the container of the function. This receiver can be used to call a function using "." operator. For example
+
+# Syntax:
+    =>
+    func (variable_name variable_data_type) function_name() [return_type]{
+       /* function body*/
+    }
+
+# Example:
+    =>
+    package main
+    import (
+       "fmt" 
+       "math" 
+    )
+    
+    /* define a circle */
+    type Circle struct {
+       x,y,radius float64
+    }
+    
+    /* define a method for circle */
+    func(circle Circle) area() float64 {
+       return math.Pi * circle.radius * circle.radius
+    }
+    
+    func main(){
+       circle := Circle{x:0, y:0, radius:5}
+       fmt.Printf("Circle area: %f", circle.area())
+    }
+
+# Methods with Struct Type Receiver
+        => You can create a method with a struct type receiver that operates on a copy of the struct, so whatever changes will be done in the method, they do not affect the original struct.
+
+# Example:
+        =>
+        package main
+        import "fmt"
+        
+        // Struct
+        type Rectangle struct {
+            width, height float64
+        }
+        
+        // Define a method  with struct type receiver
+        func (rect Rectangle) Area() float64 {
+            return rect.width * rect.height
+        }
+        
+        func main() {
+            rectObj := Rectangle{width: 2.4, height: 4.5}
+            fmt.Println("Area of Rectangle:", rectObj.Area())
+        }
+
+# Methods with Non-Struct Type Receiver
+        => You can also create a method withnon-struct type receivers of such type whose definition is present in the same package.
+
+        => package main
+            import "fmt"
+            
+            // Creating a custom type based on int
+            type value int
+            
+            // Defining a method with a non-struct receiver
+            func (v value) cube() value {
+                return v * v * v
+            }
+            
+            func main() {
+                x := value(3)
+                y := x.cube()
+            
+                fmt.Println("Cube of", x, "is", y) 
+            }
