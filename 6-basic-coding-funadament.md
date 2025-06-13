@@ -60,3 +60,44 @@
 
          
 etc.
+
+
+
+## Functions:
+    => 
+            A function declaration tells the compiler about a function name, return type, and parameters.
+            A function definition provides the actual body of the function.
+
+# Functions are also known as method, sub-routine, or procedure.
+
+
+# Defining a Function in Go Language
+        => A function is defined in Go language by using the func keyword followed by the function_name, parameter list, and the return type.
+
+# Syntax:
+        =>
+        func function_name( [parameter list] ) [return_types]
+        {
+           body of the function
+        }
+
+# Components of a Function
+1. Func
+2. Function Name
+3. Parameters
+4. Return type
+5. Function Body
+
+
+
+# Example:        
+        =>
+            package main
+            import "fmt"
+            func swap(x, y string) (string, string) {
+               return y, x
+            }
+            func main() {
+               a, b := swap("Mahesh", "Kumar")
+               fmt.Println(a, b)
+            }
