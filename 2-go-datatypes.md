@@ -1,8 +1,8 @@
 # Types of Go Data Types:
     =>
     1. Boolean Types: true, false.
-    2. Numeric Types: integer(uint8, uint16, uint32, uint64:=> (u-> unsigned). int8, int16, int32, int64:=> signed) floating (float32, float64, complex64 (complex number with float32 real and imaginary parts, complex128 (float64 real and imaginary parts),
-    Other: (byte (same as uint8), rune(same as int32), uint(32 or 64 bits), int(same size as uint), uintptr(an unsigned integer to store the uninterpreted bits of a pointer value.
+    2. Numeric Types: integer(uint8, uint16, uint32, uint64:=> (u-> unsigned). int8, int16, int32, int64:=> signed) floating (float32, float64), complex64 (complex number with float32 real and imaginary parts, complex128 (float64 real and imaginary parts)),
+    Other: (byte (same as uint8)), rune(same as int32), uint(32 or 64 bits), int(same size as uint), uintptr(an unsigned integer to store the uninterpreted bits of a pointer value).
     3. String Types:
     4. Derived Types: 
       4.1. Pointer types: it stores the memory address of another variable.
