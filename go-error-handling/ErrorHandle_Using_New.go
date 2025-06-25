@@ -1,24 +1,19 @@
 package main
 
 import (
-	"errors"
-	"fmt"
+	"github.com/ankush/error/deferExample"
 )
 
-func checkName(name string) error {
-	//create a new error:
-	newError := errors.New("Invalid name")
-	if name != "NewName" {
-		return newError
-	}
-	return nil
-}
+//	func checkName(name string) error {
+//		//create a new error:
+//		newError := errors.New("Invalid name")
+//		if name != "NewName" {
+//			return newError
+//		}
+//		return nil
+//	}
 func main() {
 	name := "Hello"
-	err := checkName(name)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("valid name")
-	}
+	defer deferExample.DeferExample(name)
+	// err := checkName(name)
 }
