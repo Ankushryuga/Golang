@@ -46,7 +46,8 @@ Go WaitGroups:
 
 	#syntax:
 */
-package goconcurrency
+// package goconcurrency
+package main
 
 import (
 	"fmt"
