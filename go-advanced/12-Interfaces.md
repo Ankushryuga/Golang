@@ -1,6 +1,8 @@
 # Interfaces:
     => Its a set of method signatures, the struct data type implements these interfaces to have method definition.
 
+   => interfaces enable polymorphism, allowing code to work with different types as long as they implement the required methods of an interface.
+   
 # Syntax:
     =>
           /* define an interface */

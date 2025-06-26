@@ -13,7 +13,7 @@ mu.Lock()
 mu.Unlock()
 */
 
-package main
+package goconcurrency
 
 import (
 	"sync"
