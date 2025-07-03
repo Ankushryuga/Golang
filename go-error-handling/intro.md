@@ -51,3 +51,19 @@
             defer file.Close()
             return nil
         }
+
+
+# How do you handle Panic and Recover from them in Go?
+    => 
+    Go provides, built-in panic() and recover() functions can be used. When an error occurs,panic() is called and the program execution stops, you can use the defer statement to call recover(), which stops the panic and resumes execution from the point of the nearest enclosing function call.
+        
+    It's important to note that you should only use panic and recover for exceptional cases such as when a program encounters unexpected errors. It's not meant to handle normal control flow or act as a replacement for checking errors.
+    
+    Using these functions properly can help you ensure programs remain robust and reliable.
+
+
+
+# defer statement in Golang, give an example of a deferred function?
+    =>
+    The defer statement in Golang is used to postpone the execution of a function until the surrounding function completes. It is often used when you want to make sure some cleanup tasks are performed before exiting a function, regardless of errors or other conditions.
+    Here's an example of a deferred function's call:
