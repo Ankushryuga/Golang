@@ -47,3 +47,14 @@
     8. Channel Types:
         ch := make(chan int)
           
+# What is the syntax for creating and using a type assertion in Go?
+    =>
+    A type assertion is used to extract a value of an underlying concrete type from an interface value. the syntax for creating and using a type assertion involves putting the keyword.(type) after the value that you want to assert the type of:
+        ## example:
+        var val interface{}="Hello world"
+        str, ok := val.(string)
+        if ok{
+        fmt.Println(str)
+        }else{
+            fmt.Println("val is not a string")
+        }
