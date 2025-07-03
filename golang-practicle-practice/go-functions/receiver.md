@@ -68,3 +68,28 @@
         a.changeName("banti")
         fmt.Println("After", a.name)
     }
+
+
+# Method accepting both pointer and value:
+    => 
+    Go methods can accept both value and pointer receivers, you can pass either a pointer or a value, and the method will handle it accordingly.
+        
+        package main
+        import "fmt"
+        type person struct{
+            name string
+        }
+        func (p * person) updateName(name string){
+            p.name=name
+        }
+
+        func (p person) showName(){
+            fmt.Println("Name: ", p.name)
+        }
+
+        func main(){
+            a := person{name:"ankush"}
+            a.updateName("banti")
+            fmt.Println("After pointer method :", a.name)
+            (&a).showName()
+        }
