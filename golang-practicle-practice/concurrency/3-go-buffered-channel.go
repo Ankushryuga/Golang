@@ -9,6 +9,13 @@ Buffered channels accepts a limited number of values without a corresponding rec
 NOTE:::   range only works properly if the channel is closed, because it will keep waiting for new value if it's stil open..
 
 NOTE::: recover() only catches panics in the same goroutine.
+
+NOTE::: without close(), range will block forever after the last value in the buffer is read, waiting for more.
+closing the channel tells go that no more values will be sent, so range stops after reading all buffered values.
+
+
+
+comma ok idiom, used to handle operations that may succeed or fail..
 */
 
 //example:
@@ -47,5 +54,18 @@ func main(){
   for val := range ch{
     fmt.Println(val)
   }
+
+  //using range with ok-idiom
+
+  for{
+    val, ok := <- ch{
+      if !ok{
+        fmt.Println("channel is closed")
+        break
+      }
+      fmt.Println("Recived : ", val)
+    }
+  }
+  
 }
 
