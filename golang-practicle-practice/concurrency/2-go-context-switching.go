@@ -23,3 +23,14 @@ func main(){
 
     time.Sleep(time.Second)
   }
+
+
+/**
+## to see context switches:
+        => go run -race filename.go
+
+## or for profilling:
+        => go tool trace
+
+## you can trace goroutine scheduling and context switches visually.
+**/
