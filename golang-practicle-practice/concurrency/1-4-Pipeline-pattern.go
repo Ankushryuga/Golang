@@ -3,6 +3,12 @@ What is pipeline:
   => A pipeline connects stages of computation with channels, Each stage does work and passes the result to the next.
 */
 
+/***
+
+## when to use:
+1. for data proessing pipelines, transformations stages, streamming logs etc..
+*/
+
 
 package main
 
