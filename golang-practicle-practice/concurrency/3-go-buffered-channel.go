@@ -7,12 +7,16 @@ Buffered channels accepts a limited number of values without a corresponding rec
 
 
 NOTE:::   range only works properly if the channel is closed, because it will keep waiting for new value if it's stil open..
+
+NOTE::: recover() only catches panics in the same goroutine.
 */
 
 //example:
 
 package main
-import "fmt"
+import ("fmt"
+"time"
+)
 
 
 
@@ -27,7 +31,21 @@ func main(){
   ch <- 11111  //it will block or ( panic if no receiver) because buffer is full.
   */
 
-  for {
-    if ok
+  close(ch)
+  go func(){
+    defer func(){
+      if r:=recover(); r!=nil{
+        fmt.Println("Recovered from gorouting panic: ", r)
+      }
+    }()
+    ch <- 11111
+  }()
+
+  //Allow time..
+  time.Sleep(100 * time.Millisecond)
+
+  for val := range ch{
+    fmt.Println(val)
   }
 }
+
