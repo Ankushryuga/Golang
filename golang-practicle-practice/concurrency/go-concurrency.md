@@ -1,4 +1,6 @@
-
+## NOTE:::
+    =>
+    range only works properly if the channel is closed, because it will keep waiting for new value if it's stil open..
 
 
 ## Context Switching in Go:
