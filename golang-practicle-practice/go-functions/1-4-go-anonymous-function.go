@@ -6,6 +6,9 @@ Go Anonymous functions allow you to define temporary, one-time use functions exa
 1. Executing code on the spot.
 2. Satisfying variable usage from surrounding code.
 3. Scheduling fast jobs in goroutine
+
+Variable capturing:
+This means that even after the surrounding function has returned, the closure retains access to those variables—not just their values at the time of capture, but the variables themselves.
 */
 
 
