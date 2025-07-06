@@ -33,6 +33,21 @@ func multiplier(factor int) func(int) int{
   }
 }
 
+
+//variable capcture::
+func variableCapture(){
+  var focus []func()
+  for i:=0;i<4;i++{
+    focus = append(focus, func(){
+      fmt.Println(i)
+    })
+  }
+
+  for _, f := range focus{
+    f()
+  }
+}
+
 func main(){
   greet := func(){
     fmt.Println("Tutorials point")
@@ -70,4 +85,6 @@ func main(){
 
   fmt.Println(double(6))  //2*6=12
   fmt.Println(tripler(4))  //3*4=12
+
+  variableCapture()
 }
