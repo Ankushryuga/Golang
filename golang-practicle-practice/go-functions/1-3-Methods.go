@@ -47,8 +47,58 @@ func (l *Logger) Log(msg string){
   }
   fmt.Println(l.Prefix, msg)
 }
-
 //end
+
+
+//Methods on structs vs Aliases vs Non-struct types..
+// you can attach methods to any named type - not just structs...
+type MyInt int
+
+func (m MyInt) Doube() int{
+  return int(m)*2
+}
+
+
+/////NOTE : Methods and Interface::
+//Methods are how a type implements an interface in go.
+
+type Animal interface{
+  Speak() string  
+}
+
+type Dog struct{}
+
+func (d Dog) Speak() string{
+  return "Woof"
+}
+
+
+/// 8. Embedding and Method promotion:::
+//Go supports composition via embedding..
+
+type Base struct{}
+
+func (b Base) Hello(){
+  fmt.Println("hello from base")
+}
+
+
+type Derived struct{
+  Base
+}
+
+// 9. Methods on interface pointer..
+type Printer interface{
+  Print()
+}
+
+type Data struct{}
+
+func (d *Data) Print(){
+  fmt.Println("Printed")
+}
+
+
 func main(){
   u := User{Name:"Ankush"}
   u.setName("Raj")
@@ -57,4 +107,16 @@ func main(){
 
   var l *Logger=nil
   l.Log("test")
+
+
+  d := Derived{}
+  d.Hello() //promoted
+
+
+  var p Printer
+    data := Data{}
+//   var data Data
+  //p=data    //error: Data does not implement printed.
+  p = &data  //Data* implements Printed..
+  p.Print()
 }
