@@ -123,6 +123,64 @@ m := map[string]Person{
 | Anonymous       | `struct { Name string }{...}`        |
 
 
+##### JSON tags in structs
+| Tag                     | Behavior                                     |
+| ----------------------- | -------------------------------------------- |
+| `json:"name"`           | Maps JSON field `"name"` to struct field     |
+| `json:"name,omitempty"` | Omits the field if it's empty (`zero` value) |
+| `json:"-"`              | Ignores the field during (un)marshalling     |
+
+
+type Book struct {
+    Title     string  `json:"title"`
+    Author    string  `json:"author,omitempty"`
+    Internal  string  `json:"-"` // never included in JSON
+}
+ Handling Optional Fields with *type
+If a field is optional (nullable), use pointers:
+
+type UpdateUserRequest struct {
+    Name  *string `json:"name,omitempty"`
+    Email *string `json:"email,omitempty"`
+}
+This way you can distinguish between "zero value" and "not provided."
+
+
+
+🚫 Handling Unknown Fields
+By default, Go ignores unknown fields in JSON. To prevent this (e.g., for strict APIs), decode into map[string]interface{} or use custom unmarshalling logic.
+🛠️ Full Example: API Handler with JSON
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+    var req LoginRequest
+    err := json.NewDecoder(r.Body).Decode(&req)
+    if err != nil {
+        http.Error(w, "Invalid JSON", http.StatusBadRequest)
+        return
+    }
+
+    // Validate login, generate token, etc.
+    res := LoginResponse{
+        Token: "secret-token-123",
+        User: User{
+            ID:       1,
+            Username: "john_doe",
+            Email:    req.Email,
+        },
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(res)
+}
+| Feature                       | Benefit / Usage                     |
+| ----------------------------- | ----------------------------------- |
+| Structs model real-world data | Useful for DB, APIs, services, etc. |
+| JSON tags                     | Control encoding/decoding           |
+| Embedded structs              | Composition and reuse               |
+| Pointers in struct            | Represent optional/nullable fields  |
+| Marshal / Unmarshal           | Convert between JSON and Go types   |
+
+
 */
 package main
 
@@ -147,4 +205,39 @@ func main() {
     p.Birthday()
     fmt.Println("New age:", p.Age)
 }
+
+
+
+//Part 2: How Structs Work with JSON APIs in Go’s encoding/json package provides powerful functionality to encode (marshal) and decode (unmarshal) JSON using structs.
+
+/**
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+type Product struct {
+    ID    int     `json:"id"`
+    Name  string  `json:"name"`
+    Price float64 `json:"price"`
+}
+
+func main() {
+    // JSON to struct (Unmarshal)
+    jsonStr := `{"id":101, "name":"Laptop", "price":999.99}`
+    var p Product
+    err := json.Unmarshal([]byte(jsonStr), &p)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Struct:", p)
+
+    // Struct to JSON (Marshal)
+    out, _ := json.MarshalIndent(p, "", "  ")
+    fmt.Println("JSON:\n", string(out))
+}
+
+*/
 
