@@ -9,7 +9,10 @@ This program demonstrates:
 
 package main
 
-import "fmt"
+import (
+  "fmt"
+  "time"
+  )
 
 // Demonstrates various ways to declare and use variables
 func variableMethod() {
@@ -101,7 +104,20 @@ func controlStructures() {
     fmt.Println("x is odd")
   }
 
+  // declaring and initializing a new variable num, just for this if block.
+  //This variable num is scoped to if-else chain only - it doesn't exist outside.
+  //go allows this short declaration inside if and switch statements.
+  //then the code checks conditions on num:
+  if nums := 9; nums<0{
+    fmt.Println(num, "is negative")
+  }else if num<10{
+    fmt.Println(num, "has 1 digit")
+  }else{
+    fmt.Println(num, "has multiple digits")
+  }
+  
   fmt.Println("\n6. Switch Example:")
+  
   switch x {
   case 5:
     fmt.Println("x is five")
@@ -112,6 +128,40 @@ func controlStructures() {
   default:
     fmt.Println("x has an unknown value")
   }
+
+
+  //Another switch example::
+  switch time.No().Weekday(){
+    case time.Saturday, time.Sunday:
+      fmt.Println("It's the weekend")
+    default:
+      fmt.Println("It's weekday")
+  }
+
+  ///Another:
+  t := time.Now()
+  switch{
+    case t.Hour()<12:
+      fmt.Println("It's before noon")
+    default:
+      fmt.Println("It's after noon")
+  }
+//Another::
+  whatAmI := func(i interface{}){
+    switch t:=i.(type){
+      case bool:
+        fmt.Println("I am boolean")
+      case int:
+        fmt.Println("I am Integer")
+      default:
+        fmt.Printf("Don't know type %T\n", t) 
+    }
+  }
+
+  whatAmI(true)
+  whatAmI(12)
+  whatAmI("HEHEHEHE")
+  
 }
 
 // Entry point of the program
