@@ -7,7 +7,10 @@ package main
 
 import "fmt"
 
-func main() {
+
+
+//Go Array Example::
+func goArrayExample() {
   // 1st way: Declare an array of 5 integers (default values are 0)
   var a [5]int
   fmt.Println("array: ", a)
@@ -49,4 +52,18 @@ func main() {
     {1, 2, 3}, // Row 1
   }
   fmt.Println("2D array with fixed values:", twoD)
+}
+
+
+
+
+//Go Slice Example:::
+func goSliceExample(){
+  var slice1 []int
+  
+}
+
+
+func main(){
+  goArrayExample()
 }
