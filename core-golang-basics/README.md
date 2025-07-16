@@ -49,3 +49,19 @@ Be mindful of shared underlying arrays and memory usage.
 Use copy for making independent copies.
 Favor slices over arrays in most practical applications.
 Leverage new language features like generics for advanced operations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ a practical mini-project, like building a JSON-based REST API using structs and net/http? Or working with structs + databases using gorm or sql?
