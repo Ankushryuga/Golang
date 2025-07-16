@@ -30,3 +30,39 @@ func constantExample(){
   fmt.Println(d)
   fmt.Println(int64(d))
 }
+
+
+//Loops: golang uses single looping construct the for loop..
+func goLoopsExamples(){
+  //1. Traditional for loop.
+  for i:=0;i<5;i++{
+    fmt.Println(i)
+  }
+  //2. while loop equivalent:
+  sum := 1
+  for sum<100{
+    fmt.Println(sum)
+    sum+=sum
+  }
+
+  //3. Infinite loop: Omitting all 3 components create an infinite loop, which can be terminated using break statement.
+  for {
+    fmt.Println("Infinite Loop Example")
+    break
+  }
+
+  //4. for ...range loop: 
+  nums := []int{102,103, 104, 105}
+  for index, value := range nums{
+    fmt.Println("Index: ", index, "value:", value)
+  }
+  //To iterate only value, you can use the blank identifier (_) for the index.
+  for _, value := range nums{
+    fmt.Println("value: ", value)
+  }
+  //To iterate only index..
+  for index, _ := range nums{
+    fmt.Println("Index: ", index)
+  }
+  
+}
