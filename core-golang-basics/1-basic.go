@@ -1,68 +1,130 @@
-/***
-This page is contains variables, constants, for, if/else, switch.
+/**
+This program demonstrates:
+- Variable declarations
+- Constants
+- Different types of for loops
+- If/else condition
+- Switch statement
 */
+
 package main
 
 import "fmt"
-//Variables::
-//var i int=10
-func variableMethod(){
+
+// Demonstrates various ways to declare and use variables
+func variableMethod() {
+  // Declare a string variable with 'var'
   var a = "initial"
+
+  // Short variable declaration using :=
   b := 5
-//  c, d := 1,2
-  var e, f int = 1,2
-  fmt.Println(e, f)
 
-  var g=true
+  // Declare and initialize multiple variables of same type
+  var e, f int = 1, 2
+
+  // Boolean variable
+  var g = true
+
+  // Default value (zero) of uninitialized int variable
   var h int
-  fmt.Println(a)
-  fmt.Println(b)
-  fmt.Println(g)
-  fmt.Println(h)
+
+  // Print variables
+  fmt.Println("a =", a)
+  fmt.Println("b =", b)
+  fmt.Println("e, f =", e, f)
+  fmt.Println("g =", g)
+  fmt.Println("h =", h) // Will print 0 (default int value)
 }
 
-//Constants:: const declares a constant value.
+// Constants in Go (fixed values that cannot be changed)
 const s string = "Hello"
-func constantExample(){
-  fmt.Println(s)
-  const n=500000000
-  const d=3e20/n
-  fmt.Println(d)
-  fmt.Println(int64(d))
+
+func constantExample() {
+  fmt.Println("Constant string s =", s)
+
+  // Declare numerical constants
+  const n = 500000000
+  const d = 3e20 / n // 3e20 is a float64 scientific notation
+
+  // Print result
+  fmt.Println("d =", d)
+  fmt.Println("int64(d) =", int64(d)) // Convert float64 to int64
 }
 
-
-//Loops: golang uses single looping construct the for loop..
-func goLoopsExamples(){
-  //1. Traditional for loop.
-  for i:=0;i<5;i++{
-    fmt.Println(i)
+// Different loop types in Go
+func goLoopsExamples() {
+  fmt.Println("1. Traditional for loop:")
+  for i := 0; i < 5; i++ {
+    fmt.Println("i =", i)
   }
-  //2. while loop equivalent:
+
+  fmt.Println("\n2. While-style loop (for with condition):")
   sum := 1
-  for sum<100{
-    fmt.Println(sum)
-    sum+=sum
+  for sum < 100 {
+    fmt.Println("sum =", sum)
+    sum += sum
   }
 
-  //3. Infinite loop: Omitting all 3 components create an infinite loop, which can be terminated using break statement.
+  fmt.Println("\n3. Infinite loop with break:")
   for {
-    fmt.Println("Infinite Loop Example")
+    fmt.Println("Inside infinite loop (breaking immediately)")
     break
   }
 
-  //4. for ...range loop: 
-  nums := []int{102,103, 104, 105}
-  for index, value := range nums{
-    fmt.Println("Index: ", index, "value:", value)
+  fmt.Println("\n4. for...range loop (over slice):")
+  nums := []int{102, 103, 104, 105}
+
+  // Iterate over index and value
+  for index, value := range nums {
+    fmt.Println("Index:", index, "Value:", value)
   }
-  //To iterate only value, you can use the blank identifier (_) for the index.
-  for _, value := range nums{
-    fmt.Println("value: ", value)
+
+  // Iterate over values only
+  for _, value := range nums {
+    fmt.Println("Value:", value)
   }
-  //To iterate only index..
-  for index, _ := range nums{
-    fmt.Println("Index: ", index)
+
+  // Iterate over indices only
+  for index := range nums {
+    fmt.Println("Index:", index)
   }
-  
+}
+
+// Demonstrates if/else and switch statements
+func controlStructures() {
+  x := 10
+
+  fmt.Println("\n5. If/Else Example:")
+  if x%2 == 0 {
+    fmt.Println("x is even")
+  } else {
+    fmt.Println("x is odd")
+  }
+
+  fmt.Println("\n6. Switch Example:")
+  switch x {
+  case 5:
+    fmt.Println("x is five")
+  case 10:
+    fmt.Println("x is ten")
+  case 20:
+    fmt.Println("x is twenty")
+  default:
+    fmt.Println("x has an unknown value")
+  }
+}
+
+// Entry point of the program
+func main() {
+  fmt.Println("=== Variable Method ===")
+  variableMethod()
+
+  fmt.Println("\n=== Constant Example ===")
+  constantExample()
+
+  fmt.Println("\n=== Loop Examples ===")
+  goLoopsExamples()
+
+  fmt.Println("\n=== Control Structures ===")
+  controlStructures()
 }
