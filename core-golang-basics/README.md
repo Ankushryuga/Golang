@@ -16,7 +16,7 @@
             # 🟢 json.Marshal() returns a []byte, which is typically converted to a string.
 
 # Unmarshaling:
-Unmarshaling is the process of parsing JSON into a Go Struct or variable.
+        Unmarshaling is the process of parsing JSON into a Go Struct or variable.
         =>
         jsonData := `{"name":"Bob", "age":25}`
 
