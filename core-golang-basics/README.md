@@ -92,6 +92,8 @@ func Filter[T any](s []T, f func(T) bool) []T {
     }
     return result
 }
+
+
 Summary
 Initialize slices with capacity when possible.
 Always assign after append.
