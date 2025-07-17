@@ -1,5 +1,5 @@
 ## Marshaling:
-Marshaling is the process of converting a Go object into JSON (or another format)..
+        Marshaling is the process of converting a Go object into JSON (or another format)..
         =>
             type User struct{
                 Name string    `json:"name"`
