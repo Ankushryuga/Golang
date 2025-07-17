@@ -1,3 +1,53 @@
+## Marshaling:
+Marshaling is the process of converting a Go object into JSON (or another format)..
+        =>
+            type User struct{
+                Name string    `json:"name"`
+                Age int        `json:"age"`
+            } 
+            func main(){
+                u := User{Name:"Ankush", Age:25}
+                data, err := json.Marshal(u)
+                if err!=nil{
+                    panic(err)
+                }
+                fmt.Println(string(data))    //o/p: {"name":"Ankush", "age":25}
+            }
+            # 🟢 json.Marshal() returns a []byte, which is typically converted to a string.
+
+# Unmarshaling:
+Unmarshaling is the process of parsing JSON into a Go Struct or variable.
+        =>
+        jsonData := `{"name":"Bob", "age":25}`
+
+        var u User 
+        err := json.Unmarshal([]byte(jsonData), &u)        //unmarshaling..
+        if err!=nil{
+            panic(err)
+        }
+        fmt.Println(u.Name, u.Age)    
+
+        # json.Unmarshal() takes a byte slice and a pointer to the variable where data should be loaded.. 
+
+| Term      | Description | Analogy              |
+| --------- | ----------- | -------------------- |
+| Marshal   | Go → JSON   | Packing into a box   |
+| Unmarshal | JSON → Go   | Unpacking from a box |
+
+# Use Tags for JSON field names:
+    type Person struct{
+        FirstName string    `json:"first_name"`    //maps to "first_name" in JSON.
+    }
+# Custom Marshal/Unmarshal (like with Enums)
+        - You can implement:    
+            - MarshalJSON() ([]byte, error)
+            - UnmarshalJSON([]byte) error
+
+To control how a type is converted to/from JSON.
+# MarshalIndent() for pretty JSON.
+    data, _ := json.MarshalIndent(u, "", " ")
+    fmt.Println(string(data))
+
 ## 1. Understand Slices vs Arrays
 Slices are references to underlying arrays with three components: pointer to array, length, and capacity.
 Modifying elements of a slice modifies the underlying array, so be mindful of shared references.
