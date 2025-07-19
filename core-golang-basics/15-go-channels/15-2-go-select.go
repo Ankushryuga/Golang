@@ -73,12 +73,12 @@ func main(){
   ch2 := make(chan string)
 
   go func(){
-    time.Sleep(1*time.Second)
+    time.Sleep(1*time.Second)      //executes after 1s.
     ch1 <- "from ch1"
   }()
 
   go func(){
-    time.Sleep(2*time.Second)
+    time.Sleep(2*time.Second)      //executes after 2s
     ch2 <- "from ch2"
   }()
 
