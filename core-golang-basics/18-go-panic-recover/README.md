@@ -14,3 +14,12 @@
   - **Expected failure**(use error return values)
   - in **control flow** (it's not try/catch)
 
+
+## Custom Panic Handler:
+If you want a **central place to handle panics** in you app, you can define a function like this:
+      =>
+      func HandlePanic(){
+        if r:=recover(); r!=nil{
+          fmt.Println("Panic recovered")
+        }
+      }
