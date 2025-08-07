@@ -29,3 +29,6 @@ Fundamental concepts of golangs
 1. https://github.com/trending/go
 2. https://github.com/ollama/ollama/tree/main
 3. https://github.com/avelino/awesome-go?tab=readme-ov-file#artificial-intelligence
+
+
+# Clean Architecture
