@@ -22,4 +22,3 @@ A package in made up of Go files that live in the same directory and have the sa
 ```
 
 - Examples coming soon
-- 
