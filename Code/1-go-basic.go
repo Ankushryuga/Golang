@@ -1,3 +1,6 @@
+// Example of type, struct variables
+
+
 package main
 
 import "fmt"
