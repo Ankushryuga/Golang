@@ -177,4 +177,6 @@ func main() {
 
   fmt.Println("\n=== Control Structures ===")
   controlStructures()
+
+  fmt.Println("\n=== Function ends ===")
 }
