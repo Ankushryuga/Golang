@@ -32,6 +32,8 @@
     - [Returning the value](#returning-the-value)
     - [Multiple returns](#multiple-returns)
     - [Named return values](#named-return-values)
+    - [Functions as values](#functions-as-values)
+    - [Closures](#closures)
 
 ## Variables and Data Types
 
@@ -620,4 +622,47 @@ func split(sum int)(x, y int){
 func main(){
   fmt.Println(split(17))
 }
+```
+
+### Functions as values
+
+- In Go, we can use functions as values.
+
+```go
+func myFunction(){
+  fn := func(){
+    fmt.Println("Inside fn")
+  }
+  fn()
+}
+
+// Simplified version of above code.
+func myFunction(){
+  func(){
+    fmt.Println("Inside fn")
+  }()
+}
+// Notice how we execute it using the parenthesis at the end.
+```
+
+### Closures
+
+- A closure is a function that references variables from outside of its body.
+
+- Closures are lexically scoped, which means functions can access the values in scope when defining the function.
+
+```go
+func myFunction() func(int) int{
+  sum := 0
+  return func(v int) int {
+    sum += v
+    return sum
+  }
+}
+
+...
+add := myFunction()
+add(5)
+fmt.Println(add(10))
+...
 ```
