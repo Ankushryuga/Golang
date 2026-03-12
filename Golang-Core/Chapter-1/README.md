@@ -34,6 +34,11 @@
     - [Named return values](#named-return-values)
     - [Functions as values](#functions-as-values)
     - [Closures](#closures)
+    - [Variadic Functions](#variadic-functions)
+    - [Init](#init)
+    - [Defer](#defer)
+  - [Modules](#modules)
+    - [What are modules?](#what-are-modules)
 
 ## Variables and Data Types
 
@@ -666,3 +671,121 @@ add(5)
 fmt.Println(add(10))
 ...
 ```
+
+### Variadic Functions
+
+which are functions that can take zero or multiple arguments using the `...` ellipses operator.
+
+```go
+func main(){
+  sum := add(1,2,3,5)
+  fmt.Println(sum)
+}
+
+func add(values ...int) int {
+  sum := 0
+  for _, v := range values{
+    sum += v
+  }
+  return sum
+}
+```
+
+> [!IMPORTANT]
+> `fmt.Println` is a variadic function, that's how we were able to pass multiple values to it.
+
+### Init
+
+`init` is a special lifecycle function that is executed before the `main` function.
+
+the `init` function does not take any arguments nor returns any value.
+
+```go
+package main
+import "fmt"
+
+func init(){
+  fmt.Println("Before main!")
+}
+
+func main(){
+  fmt.Println("Running main")
+}
+```
+
+- `init` function was executed before the `main` function.
+
+> [!IMPORTANT]
+> There can be more than one `init` function in single or multiple files.
+> For multiple `init` in a single file, their processing is done in the order of their declaration, while `init` functions declared in multiple files are processed according to the lexicographic filename order.
+
+```go
+package main
+
+import "fmt"
+
+func init(){
+  fmt.Println("Before main!")
+}
+
+func init(){
+  fmt.Println("Hello again")
+}
+
+func main(){
+  fmt.Println("Running main")
+}
+```
+
+> [!IMPORTANT]
+> The `init` function is optional and is particularly used for any global setup which might be essential for our program, such as establishing a database connection, fetching configuration files, setting up environment variables, etc.
+
+### Defer
+
+the `defer` keyword, which lets us postpones the execution of a function until the surrounding function returns.
+
+```go
+func main(){
+  defer fmt.Println("I am finished")
+  fmt.Println("Doing some work....")
+}
+```
+
+we can use multiple `defer` functions, using multiple `defer` brings us to what is known as `defer stack`.
+
+```go
+func main(){
+  defer fmt.Println("I am finished")
+  defer fmt.Println("Are you?")
+
+  fmt.Println("Doing some work...")
+}
+
+//o/p:
+// Doing some work...
+// Are you?
+// I am finished.
+
+```
+
+As we can `defer statements` are stacked and executed in LIFO manner.
+
+So, Defer is incredibly useful and is commonly used for doing cleanup or error handling.
+
+Functions can also be used with generics.
+
+## Modules
+
+### What are modules?
+
+A module is a collection of [Go packages](https://go.dev/ref/spec#Packages) stored in a file tree with a `go.mod` file at its root, provided the directory is outside `$GOPATH/src`.
+
+Go modules were introduced in Go 1.11, which brings native support for versions and modules.
+
+> [!IMPORTANT]
+> `GOPATH` is a variable that defines the root of your workspace and it contains the following folders:
+>
+> - **src**: contains Go source code orgnaized in a hierarchy.
+> - **pkg**: contains compiled package code.
+> - **bin**: contains compiled binaries and executables.
+>   ![alt text](image.png)
