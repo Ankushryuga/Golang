@@ -39,6 +39,10 @@
     - [Defer](#defer)
   - [Modules](#modules)
     - [What are modules?](#what-are-modules)
+    - [Vendoring](#vendoring)
+  - [Packages](#packages)
+    - [What are packages?](#what-are-packages)
+    - [External dependencies](#external-dependencies)
 
 ## Variables and Data Types
 
@@ -789,3 +793,151 @@ Go modules were introduced in Go 1.11, which brings native support for versions 
 > - **pkg**: contains compiled package code.
 > - **bin**: contains compiled binaries and executables.
 >   ![alt text](image.png)
+
+- Create a new module using `go mod init` command which creates a new module and initializes the go.mod file that describes it.
+  `go mod init example`
+
+The important thing to note here is that Go module can correspond to a Github repository as well if you plan to publish this module. For example:
+`go mod init example`
+
+- `go.mod` which is the file that defines the module's module path and also the import path used for the root directory, and its dependency requirements.
+
+```go
+module <name>
+go <version>
+
+require (
+  ...
+)
+```
+
+And if we want to add a new dependency, we will use `go install` command:
+
+- `go install github.com/rs/zerolog`
+
+- `go.sum` file was also created. This file contains the expected hashes of the content of the new modules.
+
+- `go list -m all`
+- If the dependency is not used, we can simply remove it using `go mod tidy`
+
+### Vendoring
+
+Vendoring is the act of making your own copy of the 3rd party packages your project is using. Those copies are traditionally placed inside each project and then saved in the project repository.
+
+This can be done through `go mod vendor` command.
+
+- After the `go mod vendor` command is executed, a `vendor` directory will be created.
+
+```bash
+├── go.mod
+├── go.sum
+├── go.work
+├── main.go
+└── vendor
+    ├── github.com
+    │   └── rs
+    │       └── zerolog
+    │           └── ...
+    └── modules.txt
+```
+
+## Packages
+
+### What are packages?
+
+A package is nothing but a directory containing one or more Go source files, or other Go packages.
+
+This means every Go source file must belong to a package and package declaration is done at top of every source file as follows.
+
+`package <package_name>`
+
+so far, we've done everything inside of `package.main`. The `main` package should also contain a `main()` function which is a special function that acts as the entry point of an executable program.
+
+> [!NOTE]
+> Go also has a concept of imports and exports but it's very elegant.
+> Basically, any value (like a variable or function) can be exported and visible from other packages if they have been defined with an upper case identifier.
+
+- Example:
+
+```go
+package custom
+
+var value int = 10    // Will not be exported.
+var Value int = 20    // Will be exported.
+```
+
+- As we can see lower case identifiers will not be exported and will be private to the package it's defined in. In our case the `custom` package.
+
+Here we can refer to it using the `module` we had initialized in our `go.mod` file earlier.
+
+```go
+----go.mod----
+module example
+
+go 1.18
+
+----main.go----
+package main
+import "example/custom"
+
+func main(){
+  custom.Value
+}
+```
+
+- Notice how the package name is the last name of import path.
+- we can import multiple packages as well like this:
+
+```go
+package main
+
+import (
+  "fmt"
+  "example/custom"
+)
+
+func main(){
+  fmt.Println(custom.Value)
+}
+```
+
+- we can also alias our imports to avoid collisions like this.
+
+```go
+package main
+
+import (
+  "fmt"
+  abcd "example/custom"
+)
+
+func main(){
+  fmt.Println(abcd.Value)
+}
+
+```
+
+### External dependencies
+
+- In go we can install external packages using `go install` command as we saw earlier.
+
+`go install github.com/rs/zerolog`
+
+```go
+package main
+
+import (
+  "github.com/rs/zerolog/log"
+  abcd "example/custom"
+)
+
+func main(){
+  log.Print(abcd.Value)
+}
+```
+
+> [IMPORTANT]
+> Make sure to check out the go doc of packages you install, which is usally located in the project's readme file. go doc parses the source code and generates documentation in HTML format. Reference to it is usually located in readme files.
+
+> [!NOTE]
+> Go doesn't have a particular "folder structure" convention, always try your best to organize your packages in a simple and intuitive way.
