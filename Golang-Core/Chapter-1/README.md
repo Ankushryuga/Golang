@@ -46,6 +46,20 @@
   - [Workspaces](#workspaces)
   - [Useful Commands](#useful-commands)
   - [Build](#build)
+  - [Pointers](#pointers)
+    - [Dereferncing](#dereferncing)
+    - [Pointers as function args](#pointers-as-function-args)
+    - [New function for initializing a pointer](#new-function-for-initializing-a-pointer)
+    - [Pointer to a pointer](#pointer-to-a-pointer)
+  - [Structs](#structs)
+    - [Defining](#defining)
+    - [Declaring and initalizing](#declaring-and-initalizing)
+    - [Without field name](#without-field-name)
+    - [Accessing fields](#accessing-fields)
+    - [Exported fields](#exported-fields)
+    - [Embedding and composition](#embedding-and-composition)
+    - [Struct Tages](#struct-tages)
+    - [Properties](#properties)
 
 ## Variables and Data Types
 
@@ -1106,3 +1120,549 @@ windows/arm64
   - `GOOS=windows GOARCH=amd64 go build -o app.exe`
   - `CGO_ENABLED`
     This variable allows us to configure [CGO](https://go.dev/blog/cgo), which is a way in Go to call C code.
+    This helps us to produce a statically linked binary that works without any external dependencies.
+
+- When we want to run our go binaries in a Docker container with minimum external dependencies.
+  - `CGO_ENABLED=0 go build -o app`
+
+## Pointers
+
+A pointer is a variable that is used to store the memory address of another variable.
+
+It can be used like this:
+`var x *T`
+
+Where `T` is the type such as `int`, `string`, `float`, and so on.
+
+```go
+package main
+import "fmt"
+
+func main(){
+  var p *int
+  fmt.Println(p)
+}
+```
+
+o/p: `nil`
+
+> [!NOTE]
+> `nil` is a predeclared identifier in Go that represents zero value for `pointer`, `interfaces`, `channels`, `maps` and `slices`.
+
+```go
+package main
+import "fmt"
+
+func main(){
+  a := 10
+  var p *int = &a
+  fmt.Println("address: ", p)
+}
+```
+
+- we use the `&` ampersand operator to refer to a variable's memory address.
+
+### Dereferncing
+
+we can also use the `*` asterisk operator to retrieve the value stored in the variable that the pointer points to. This is also called dereferncing.
+
+```go
+package main
+import "fmt"
+
+func main(){
+  a:=10
+  var p *int = &a
+  fmt.Println("address:", p)
+  fmt.Println("value:", *p)
+}
+```
+
+- we can change it as well through the pointer.
+
+```go
+package main
+
+import "fmt"
+
+func main(){
+  a := 10
+  var p *int = &a
+  fmt.Println("before", a)
+  fmt.Println("address", p)
+
+  *p = 20
+  fmt.Println("after:", a)
+}
+```
+
+### Pointers as function args
+
+Pointer can also be used as arguments for a function when we need to pass some data by refernce.
+
+```go
+myFunction(&a)
+...
+func myFunction(ptr *int) {}
+```
+
+### New function for initializing a pointer
+
+we use the `new` function which takes a type as an argument, allocates enough memory to accommodate a value of that type, and returns a pointer to it.
+
+```go
+package main
+
+import "fmt"
+func main(){
+  p := new(int)
+  *p = 100
+  fmt.Println("value", *p)
+  fmt.Println("address", p)
+}
+```
+
+### Pointer to a pointer
+
+we can create a pointer to a pointer
+
+```go
+package main
+import "fmt"
+
+func main(){
+  p := new(int)
+  *p = 100
+
+  p1 := &p
+  fmt.Println("P value", *p," address", p)
+  fmt.Println("P1 value", *p1, " address", p)
+
+  fmt.Println("Dereferenced value", **p1)
+}
+```
+
+```bash
+$ go run main.go
+P value 100  address 0xc0000be000
+P1 value 0xc0000be000  address 0xc0000be000
+Dereferenced value 100
+```
+
+As you can notice the value of `p1` matches the address of `p`.
+
+> [!NOTE]
+> Pointers in Go do not support pointer arithemetic like in C or C++.
+> `p1 := p\*2` // compiler error
+> However, we can compare 2 pointers of the same type for equality using a `==` operator.
+
+```go
+p := &a
+p1:= &a
+
+fmt.Println(p==p1)
+```
+
+## Structs
+
+A `struct` is user-defined type that contains a collection of named fields. Basically, it is used to group related data together to form a single unit.
+
+### Defining
+
+```go
+type Person struct {}
+```
+
+- we use the `type` keyword to introduce a new type, followed by the name and then the `struct` keyword to indicate that we're defining a struct.
+
+```go
+type Person struct{
+  FirstName     string
+  LastName      string
+  Age           int
+}
+```
+
+- And, if the fields have the same type, we can collapse them as well.
+
+```go
+type Person struct{
+  FirstName, LastName     string
+  Age                     int
+}
+```
+
+### Declaring and initalizing
+
+```go
+func main(){
+  var p1 Person
+
+  fmt.Println("Person 1:", p1)
+}
+```
+
+```bash
+$ go run main.go
+Person 1: {  0}
+```
+
+All the struct fields are initialized with their zero values. So the `FirstName` and `LastName` are set to `""` empty string and `Age` is set to 0.
+
+- we can also initialize it as "struct literal"
+
+```go
+func main(){
+  var p1 Person
+
+  fmt.Println("Person 1:", p1)
+
+  var p2 = Person{FirstName: "Ankush", LastName: "Rayuga", Age: 26}
+
+  fmt.Println("Person 2:", p2)
+}
+```
+
+For readability, we can separate by new line but this will also require a trailing comma.
+
+```go
+var p2 = Person {
+  FirstName:    "Ankush"
+  LastName:     "Rayuga"
+  Age:          26
+}
+```
+
+```bash
+$ go run main.go
+Person 1: {  0}
+Person 2: {Ankush Rayuga 26}
+```
+
+- we can also initialize only a subset of fields
+
+```go
+func main(){
+  var p1 Person
+
+  fmt.Println("Person 1:", p1)
+
+  var p2 = Person{
+    FirstName:    "Ankush"
+    LastName:     "Rayuga"
+    Age:          26
+  }
+
+  fmt.Println("Person 2:", p2)
+
+  var p3 = Person{
+    FirstName:    "Banti",
+    LastName:     "Ankush",
+  }
+
+  fmt.Println("Person 3:", p3)
+}
+```
+
+```bash
+$ go run main.go
+Person 1: {  0}
+Person 2: {Ankush Rayuga 26}
+Person 3: {Banti Ankush 0}
+```
+
+As we can see, the age field of person 3 has defaulted to the zero value.
+
+### Without field name
+
+Go structs also supports initialization without field names.
+
+```go
+func main(){
+  var p1 Person
+
+  fmt.Println("Person 1:", p1)
+
+  var p2 = Person{
+    FirstName:      "Ankush"
+    LastName:       "Rayuga"
+    Age:            26
+  }
+
+  fmt.Println("Person 2:", p2)
+
+  var p3 = Person{
+    FirstName:    "Kane"
+    LastName:     "William"
+  }
+  fmt.Println("Person 3:", p3)
+
+  var p4 = Person{"David", "Gogins"}
+
+  fmt.Println("Person 4:", p4)
+}
+```
+
+we will need to provide all the values during the initialization or it will fail.
+
+```bash
+$ go run main.go
+# command-line-arguments
+./main.go:30:27: too few values in Person{...}
+```
+
+```go
+var p4 = Person{"Bruce", "Wayne", 40}
+
+fmt.Println("Person 4:", p4)
+```
+
+- we can also declare an anonymous struct.
+
+```go
+func main(){
+  var p1 Person
+
+  fmt.Println("Person 1:", p1)
+
+  var p2 = Person{
+    FirstName:    "Ankush"
+    LastName:     "Rayuga"
+    Age:          26
+  }
+  fmt.Println("Person 2:", p2)
+
+  var p3 = Person{
+    FirstName:      "Tony"
+    LastName:       "Stark"
+  }
+
+  fmt.Println("Person 3:", p3)
+
+  var p4 = Person {"Kane", "wiliam", 34}
+
+  fmt.Println("Person 4:", p4)
+
+  var a = struct{
+    Name  string
+  }{"Golang"}
+
+  fmt.Println("Anonymous:", a)
+}
+```
+
+### Accessing fields
+
+```go
+func main(){
+  var p = Person{
+    FirstName:    "Ankush"
+    LastName:     "Rayuga"
+    Age:          26
+  }
+  fmt.Println("FirstName", p.FirstName)
+}
+```
+
+- we can also create a pointer to structs as well.
+
+```go
+func main(){
+  var p = Person{
+    FirstName:      "Ankush"
+    LastName:       "Rayuga"
+    Age:            26
+  }
+
+  ptr := &p
+  fmt.Println((*ptr).FirstName)
+  fmt.Println(ptr.FirstName)
+}
+```
+
+Both `Println` statements are equal as in Go we don't need to explicitly derefernce the pointer. we can also use the built-in `new` function.
+
+```go
+func main(){
+  p := new(Person)
+  p.FirstName = "Ankush"
+  p.LastName  = "Rayuga"
+  p.Age = 26
+
+  fmt.Println("Person", p)
+}
+```
+
+```bash
+$ go run main.go
+Person &{Ankush Rayuga 26}
+```
+
+> [!NOTE]
+> Two structs are equal if all their corresponding fields are equal as well.
+
+```go
+func main(){
+  var p1 = Person{"a", "b", 20}
+  var p2 = Person{"a", "b", 20}
+
+  fmt.Println(p1==p2)
+}
+```
+
+```bash
+$ go run main.go
+true
+```
+
+### Exported fields
+
+If a struct field is declared with a lower case identifier, it will not be exported and only be visible to the package it is defined in.
+
+```go
+type Person struct{
+  FirstName, LastName     string
+  Age                     int
+  zipCode                 string
+}
+```
+
+- the `zipCode` field won't be exported. Also the same goes for the `Person` struct, if we rename it as `person`, it won't be exported as well.
+
+```go
+type person struct{
+  FirstName, LastName     string
+  Age                     int
+  zipCode                 string
+}
+```
+
+### Embedding and composition
+
+- Go doen't support inheritance but we can do something similar with embedding.
+
+```go
+type Person struct{
+  FirstName, LastName     string
+  Age                     int
+}
+
+type SuperHero struct{
+  Person
+  Alias string
+}
+```
+
+new struct will have all the properties of the original struct. And it should behave the same as our normal struct.
+
+```go
+func main(){
+  s := SuperHero{}
+
+  s.FirstName = "Tony"
+  s.LastName  = "Stark"
+  s.Age = 40
+  s.Alias = "Iron man"
+
+  fmt.Println(s)
+}
+```
+
+```bash
+$ go run main.go
+{{Tony Stark 40} Iron man}
+```
+
+However, this is usually not recommended and in most cases, composition is preferred. So rather than embedding, we will just define it as a normal field.
+
+```go
+type Person struct{
+  FirstName, LastName   string
+  Age                   int
+}
+
+type SuperHero struct{
+  Person Person
+  Alias  string
+}
+```
+
+Hence, we can rewirte our example with `composition` as well.
+
+```go
+func main(){
+  p := Person{"Tony", "Start", 40}
+  s := SuperHero{p, "Iron man"}
+
+  fmt.Println(s)
+}
+```
+
+```bash
+$ go run main.go
+{{Tony Stark 40} Iron man}
+```
+
+### Struct Tages
+
+A struct tag is just a tag that allows us to attach metadata information to the field which can be used for custom behavior using the `reflect` package.
+
+```go
+type Animal struct{
+  Name      string    `key:"value1"`
+  Age       int       `key:"value2"`
+}
+```
+
+You will often find tags in encoding pacakges, such as XML, JSON, YAML, ORMs, and Configuration management.
+
+- Example of JSON encoder.
+
+```go
+type Animal struct{
+  Name    string    `json:"name"`
+  Age     int       `json:"age"`
+}
+```
+
+### Properties
+
+Struct are value types. When we assign one `struct` variable to another, a new copy of the `struct` is created and assigned.
+
+Similarly, when we pass a `struct` to another function, the function gets its own copy of the `struct`.
+
+```go
+package main
+
+import "fmt"
+
+type Point struct{
+  X, Y float64
+}
+
+func main(){
+  p1:=Point{1, 2}
+  p2:=p1    // Copy of p1 is assigned to p2
+
+  p2.X = 2
+  fmt.Println(p1)   // Output: {1,2}
+  fmt.Println(p2)   // Output: {2,2}
+}
+```
+
+> [!NOTE]
+> Empty struct occupies zero bytes of storage.
+
+```go
+package main
+
+import (
+  "fmt"
+  "unsafe"
+)
+
+func main(){
+  var s struct{}
+  fmt.Println(unsafe.Sizeof(s))   // Output: 0
+}
+```
