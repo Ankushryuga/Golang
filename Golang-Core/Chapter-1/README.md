@@ -60,6 +60,27 @@
     - [Embedding and composition](#embedding-and-composition)
     - [Struct Tages](#struct-tages)
     - [Properties](#properties)
+  - [Methods](#methods)
+    - [Methods with pointer receivers](#methods-with-pointer-receivers)
+    - [Properties](#properties-1)
+    - [Why methods instead of functions?](#why-methods-instead-of-functions)
+      - [When to use Each](#when-to-use-each)
+  - [Arrays and Slices](#arrays-and-slices)
+    - [Arrays](#arrays)
+      - [Declaration](#declaration)
+      - [Initialization](#initialization)
+      - [Access](#access)
+      - [Multi dimensional](#multi-dimensional)
+    - [Properties](#properties-2)
+    - [Slices](#slices)
+      - [Declaration](#declaration-1)
+      - [Initialization](#initialization-1)
+      - [Iteration](#iteration)
+      - [Function](#function)
+        - [Copy](#copy)
+        - [append](#append)
+        - [Properties](#properties-3)
+  - [Maps](#maps)
 
 ## Variables and Data Types
 
@@ -1666,3 +1687,650 @@ func main(){
   fmt.Println(unsafe.Sizeof(s))   // Output: 0
 }
 ```
+
+## Methods
+
+Methods, sometimes also known as function receivers.
+
+Go is not an oop languge, it doesn't have classes, objects and inheritance.
+
+However, Go has types. And, you can define **methods** on types.
+A method is nothing but a function with a special receiver argument.
+
+- Declaring methods
+
+```go
+func (variable T) name(params) (returnType) {}
+```
+
+The receiver argument has a name and a type. It appears b/w the `func` keyword and method name.
+
+```go
+type Car struct{
+  Name string
+  Year int
+}
+```
+
+- Method example
+
+```go
+func (c Car) IsLatest() bool{
+  return c.Year>=2015
+}
+```
+
+As you can see, we can access the instance of `Car` using the receiver variable `c`. it like similar to `this` keyword from oop's but it's not.
+
+- Now we should be able to call this method after we initialize our struct, just like we do with classes.
+
+```go
+func main(){
+  c := Car{"Tesla", 2021}
+  fmt.Println("IsLatest", c.IsLatest())
+}
+```
+
+### Methods with pointer receivers
+
+with a value receiver, the method operates on a copy of the value passed to it. Therefore, any modifications done to the receiver inside the methods are not visible to the caller.
+
+```go
+func (c Car) UpdateName(name string){
+  c.Name = name
+}
+
+func main(){
+  c := Car{"Tesla", 2021}
+  c.UpdateName("Toyota")
+  fmt.Println("Car:", c)
+}
+```
+
+```bash
+$ go run main.go
+Car: {Tesla 2021}
+```
+
+As you can name wasn't updated, so now lets switch our receiver to pointer type.
+
+```go
+func (c *Car) UpdateName(name string){
+  c.Name = name
+}
+```
+
+```bash
+$ go run main.go
+Car: {Toyota 2021}
+```
+
+As expected, methods with pointer receivers can modify the value to which the receiver points. Such modifications are visible to the caller of the method as well.
+
+### Properties
+
+- Go can interpret our function call correctly, and hence, pointer receiver method calls are just syntactic.
+
+```go
+(&c).UpdateName(...)
+```
+
+- we can omit the variable part of the receiver as well if we're not using it.
+
+```go
+func (Car) UpdateName(...){}
+```
+
+- Methods are not limited to structs but can also be used with non-struct types as well.
+
+```go
+package main
+
+import "fmt"
+type MyInt int
+
+func (i MyInt) isGreater(value int) bool {
+  return i > MyInt(value)
+}
+
+func main(){
+  i := MyInt(10)
+  fmt.Println(i.isGreater(5))
+}
+```
+
+### Why methods instead of functions?
+
+- Better organization
+  - Methods keep behaviour close to the data they operate on.
+  - Instead of:
+
+```go
+func Area(r Rectangle) float64
+```
+
+- write:
+
+```go
+func (r Rectangle) Area() float64
+```
+
+- Object-Oriented style
+  - Go doesn't have classes, but methods+structs give similar structure.
+
+```go
+type User struct{
+  Name string
+}
+
+func (u User) Greet(){
+  return "Hello "+ u.Name
+}
+```
+
+- Required for Interfaces
+  - In Go, interfaces depends on methods
+
+```go
+type Shape interface{
+  Area() float64
+}
+```
+
+`Rectangle` satisfies the interface because it has the method `Area()`.
+
+Functions cannot satisfy interfaces.
+
+- Method Sets (Polymorphism)
+  - Methods allow different types to implement the same behavior.
+
+```go
+type Circle struct {Radius float64}
+
+type Rectangle struct {Width, Height float64}
+
+func (c Circle) Area() float64{
+  return 3.14 * c.Radius * c.Radius
+}
+
+func (r Rectangle) Area() float64{
+  return r.Width * r.Height
+}
+```
+
+Now both satisfy
+
+```go
+type Shape interface{
+Area() float64
+}
+```
+
+- Mutating Data with Pointer Receivers
+  - Methods can modify the struct.
+
+```go
+func (r *Rectangle) Scale(factor float64){
+  r.Width *= factor
+  r.Height *= factor
+}
+```
+
+#### When to use Each
+
+| Use                     | Choose                       |
+| ----------------------- | ---------------------------- |
+| General utility logic   | Function                     |
+| Logic tied to a type    | Method                       |
+| Implementing interfaces | Method                       |
+| Mutating struct data    | Method with pointer receiver |
+
+## Arrays and Slices
+
+### Arrays
+
+- A fixed-size collection of elements of the same type.
+
+#### Declaration
+
+```go
+var a [n]T
+```
+
+Here, `n` is the length and `T` can be any type like integer, string, or user-defined structs.
+
+```go
+func main(){
+  var arr [4]int
+  fmt.Println(arr)
+}
+```
+
+```bash
+$ go run main.go
+[0 0 0 0]
+```
+
+By default, all the array elements are initialized with the zero value of the corresponding array type.
+
+#### Initialization
+
+- we can initialize an array using an array literal
+
+```go
+var a [n]T = [n]T{V1, V2, ... Vn}
+```
+
+```go
+func main(){
+  var arr = [4]int{1,2,3,4}
+  fmt.Println(arr)
+}
+```
+
+```bash
+$ go run main.go
+[1 2 3 4]
+```
+
+- we can even do a shorthand declaration
+
+```go
+...
+arr := [4]int{1, 2, 3, 4}
+```
+
+#### Access
+
+```go
+func main(){
+  arr := [4]int{1,2,3,4}
+
+  fmt.Println(arr[0])   // Outpute: 1
+}
+```
+
+> [IMPORTANT]
+> Iteration
+> There are multiple ways to iterate over arrays.
+
+- For loop with the `len` function, which gives us the length of the array.
+
+```go
+func main(){
+  arr := [4]int{1,2,3,4}
+  for i:=0; i<len(arr);i++{
+    fmt.Printf("Index: %d, Element: %d\n", i, arr[i])
+  }
+}
+```
+
+```bash
+$ go run main.go
+Index: 0, Element: 1
+Index: 1, Element: 2
+Index: 2, Element: 3
+Index: 3, Element: 4
+```
+
+- Using the `range`keyword with the `for` loop.
+
+```go
+func main(){
+  arr := [4]int{1,2,3,4}
+  for i, e := range arr{
+    fmt.Printf("Index: %d, Element: %d\n", i, e)
+  }
+}
+```
+
+```bash
+$ go run main.go
+Index: 0, Element: 1
+Index: 1, Element: 2
+Index: 2, Element: 3
+Index: 3, Element: 4
+```
+
+> [IMPORTANT]
+> `range` keyword is quite versatile and can be used in multiple ways.
+
+```go
+for i, e := range arr {}      // Normal usage of range
+
+for _, e := range arr {}      // Omit index with _ and use element
+
+for i := range arr {}         // Use index only
+
+for range arr {}              // Simply loop over the array
+```
+
+#### Multi dimensional
+
+```go
+func main(){
+  arr := [2][4]int{
+    {1,2,3,4},
+    {5,6,7,8}
+  }
+
+  for i, e := range arr{
+    fmt.Printf("Index: %d, Element: %d\n", i, e)
+  }
+}
+```
+
+```bash
+$ go run main.go
+Index: 0, Element: [1 2 3 4]
+Index: 1, Element: [5 6 7 8]
+```
+
+we can also let the compiler infer the length of the array using `...` ellipses instead of the length.
+
+```go
+func main(){
+  arr := [...][4]int{
+    {1,2,3,4},
+    {5,6,7,8},
+  }
+  for i, e := range arr{
+    fmt.Printf("Index: %d, Element: %d\n", i, e)
+  }
+}
+```
+
+```bash
+$ go run main.go
+Index: 0, Element: [1 2 3 4]
+Index: 1, Element: [5 6 7 8]
+```
+
+### Properties
+
+The array's length is part of its type. So, the array `a` and `b` are completely disinct types, and we cannot assign one to the other.
+
+This also means that we cannot resize an array, because resizing an array would mean changing its type.
+
+```go
+package main
+
+func main(){
+  var a = [4]int{1,2,3,4}
+  var b [2]int = a      // Error, cannot use a (type [4]int) as type [2]int in assignment
+}
+```
+
+> [!NOTE]
+> Arrays in Go are value types.
+> This means that when we assign an array to a new variable or pass an array to a function, the entire array is copied.
+> So, if we make any changes to this copied array, the original array won't be affected and will remain unchanged.
+
+```go
+package main
+
+import "fmt"
+
+func main(){
+  var a = [7]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+  var b = a     // Copy of a is assigned to b
+
+  b[0] = "Monday"
+  fmt.Println(a)    // O/P: [Mon Tue Wed Thu Fri Sat Sun]
+  fmt.Println(b)    // O/P: [Monday Tue Wed Thu Fri Sat Sun]
+}
+```
+
+### Slices
+
+A Slice is a segment of an array. Slices build on arrays and provide more power, flexibility, and convenience.
+
+A slice consists of 3 things:
+
+- A pointer reference to an underlying array.
+- The length of the segment of the array that the slice contains.
+- And, the capacity, which is the maximum size up to which the segment can grow.
+
+#### Declaration
+
+```go
+var s []T
+```
+
+As we can see, we don't need to specify any length. Let's declare a slice of integers and see how it works.
+
+```go
+func main(){
+  var s []string
+  fmt.Println(s)
+  fmt.Println(s==nil)
+}
+```
+
+```bash
+$ go run main.go
+[]
+true
+```
+
+#### Initialization
+
+There are multiple ways to initialize our slice. One way is to use the build-in `make` function.
+
+```go
+make([]T, len, cap) []T
+```
+
+```go
+func main(){
+  var s = make([]string, 0, 0)
+
+  fmt.Println(s)
+}
+```
+
+```bash
+$ go run main.go
+[]
+```
+
+- Similar to arrays, we can use the slice literal to initialize our slice.
+
+```go
+func main(){
+  var s = []string{"Go", "TypeScript"}
+  fmt.Println(s)
+}
+```
+
+```bash
+$ go run main.go
+[Go TypeScript]
+```
+
+Example
+
+```go
+package main
+
+import "fmt"
+func main(){
+  a := [5]int{204,42,23,132,24}
+  s := a[1:4]
+
+  fmt.Println("Array: %v, Length: %d, Capacity: %d\n", a)
+
+  fmt.Printf("Slice: %v, Length: %d, Capacity: %d", s, len(s), cap(s))    // Output: [42,23,132], Length: 3, Capacity: 4
+}
+```
+
+Another way is to create a slice from an array. Since a slice is a segment of an array, we can create a slice from index `low` to `high` as follows.
+`a[low:high]`
+
+```go
+func main(){
+  var a = [4]string{
+    "C++",
+    "Go",
+    "Java",
+    "TS"
+  }
+  s1 := a[0:2]    // Select from 0 to 2
+  s2 := a[:3]     // Select first 3
+  s3 := a[2:]     // Select last 2
+
+  fmt.Println("Array:", a)
+  fmt.Println("Slice 1:", s1)
+  fmt.Println("Slice 2:", s2)
+  fmt.Println("Slice 3:", s3)
+}
+```
+
+```bash
+$ go run main.go
+Array: [C++ Go Java TypeScript]
+Slice 1: [C++ Go]
+Slice 2: [C++ Go Java]
+Slice 3: [Java TypeScript]
+```
+
+Missing low index implies 0 and missing high index implies the length of the underlying array (`len(a)`).
+
+> [NOTE]
+> We can create a slice from other slices too and not just arrays.
+
+```go
+var a = []string{
+  "C++",
+  "Go",
+  "Java",
+  "TS"
+}
+```
+
+#### Iteration
+
+we can iterate over a slice in the same way you iterate over an array, by using the for loop with either `len` function or `range` keyword.
+
+#### Function
+
+Go provides built-in slice functions as well.
+
+##### Copy
+
+The `copy()` function copies element from one slice to another. It takes 2 slices, a destination, and a source. It also returns the number of elements copied.
+
+```go
+func copy(dst, src []T) int
+```
+
+Copy Example:
+
+```go
+func main(){
+  s1:=[]string{"a", "b", "c", "d"}
+  s2:=make([]string, len(s1))
+
+  e := copy(s2, s1)
+  fmt.Println("Src:", s1)
+  fmt.Println("Dst:", s2)
+  fmt.Println("Elements:", e)
+}
+```
+
+```bash
+$ go run main.go
+Src: [a b c d]
+Dst: [a b c d]
+Elements: 4
+```
+
+##### append
+
+we can append data to our slice using the build-in `append` function which appends new elements at the end of a given slice.
+It takes a slice and a variable number of arguments. It then returns a new slice containing all the elements.
+
+```go
+append(slice []T, elems ...T) []T
+```
+
+```go
+func main(){
+  s1 := []string{"a", "b", "c", "d"}
+
+  s2 := append(s1, "e", "f")
+
+  fmt.Println("s1:", s1)
+  fmt.Println("s2:", s2)
+}
+```
+
+```bash
+$ go run main.go
+s1: [a b c d]
+s2: [a b c d e f]
+```
+
+As we can see, the new elements were appended and a new slice was returned.
+
+But if the given slice doesn't have sufficient capacity for the new elements then a new underlying array is allocated with a bigger capacity.
+
+All the elements from the underlying array of the existing slice are copied to this new array, and then new elements are appended.
+
+##### Properties
+
+Slices are reference types, unlike arrays.
+This means modifying the elements of a slice will modify the corresponding elements in the referenced array.
+
+```go
+package main
+
+import "fmt"
+func main(){
+  a := [7]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+
+  s := a[0:2]
+
+  s[0]= "Sun"
+
+  fmt.Println(a)  // O/P: [Sun Tue Wed Thu Fri Sat Sun]
+  fmt.Println(s)  // O/P: [Sun, Tue]
+}
+```
+
+- Slices can be used with variadic types as well.
+
+```go
+package main
+import "fmt"
+
+func main(){
+  values := []int{1,2,3}
+  sum := add(values...)
+  fmt.Println(sum)
+}
+
+func add(values ...int) int{
+  sum := 0
+  for _, value:=range values{
+    sum += value
+  }
+  return sum
+}
+```
+
+> [!NOTE]
+> A literal = the actual value you type in your program
+
+Example:
+
+```go
+package main
+import "fmt"
+
+func main(){
+  x := 10 // 10 = integer literal, x = variable that stores that literal value
+}
+```
+
+## Maps
