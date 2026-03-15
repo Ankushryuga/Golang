@@ -81,6 +81,17 @@
         - [append](#append)
         - [Properties](#properties-3)
   - [Maps](#maps)
+    - [Declaration](#declaration-2)
+    - [Initialization](#initialization-2)
+      - [make function](#make-function)
+      - [map literal](#map-literal)
+    - [Add](#add)
+    - [Retrieve](#retrieve)
+    - [Exists](#exists)
+    - [Update](#update)
+    - [Delete](#delete)
+    - [Iteration](#iteration-1)
+    - [Properties](#properties-4)
 
 ## Variables and Data Types
 
@@ -2334,3 +2345,260 @@ func main(){
 ```
 
 ## Maps
+
+Go provides a built-in map type
+![alt text](image-1.png)
+
+A map is an unordered collection of key-value pairs. It maps keys to values. The keys are unique within a map while the values may not be.
+
+It is used for fast lookups, retrieval, and deletion of data based on keys. It is one of the most used data structures.
+
+### Declaration
+
+A map is declared using the following syntax:
+
+```go
+var m map[K]V
+```
+
+Where `K` is the key type and `V` is the value type.
+
+```go
+func main(){
+  var m map[string]int
+  fmt.Println(m)
+}
+```
+
+```bash
+$ go run main.go
+nil
+```
+
+As we can see, the zero value of a map is `nil`.
+
+A `nil` map has no keys. Moreover, any attempt to add keys to a `nil` map will result in a runtime error.
+
+### Initialization
+
+There are multiple ways to initialize a map
+
+#### make function
+
+we can use the built-in `make` function, which allocates memory for referenced data types and initializes their underlying data structures.
+
+```go
+func main(){
+  var m = make(map[string]int)
+
+  fmt.Println(m)
+}
+```
+
+```bash
+$ go run main.go
+map[]
+```
+
+#### map literal
+
+Another way is using a map literal
+
+```go
+func main(){
+  var m = map[string]int{
+    "a": 0,
+    "b": 1,
+  }
+  fmt.Println(m)
+}
+```
+
+> [!NOTE]
+> Note that the trailing comma is required.
+
+```bash
+$ go run main.go
+map[a:0 b:1]
+```
+
+we can use our custom types as well.
+
+```go
+type User struct{
+  Name string
+}
+
+func main(){
+  var m = map[string]User{
+    "a": User{"Peter"},
+    "b": User{"Parker"},
+  }
+  fmt.Println(m)
+}
+```
+
+we can even remove the value type and Go wll figure it out.
+
+```go
+var m = map[string]User{
+  "a": {"Peter"},
+  "b": {"Parker"},
+}
+```
+
+```bash
+$ go run main.go
+map[a:{Peter} b:{Seth}]
+```
+
+### Add
+
+```go
+func main(){
+  var m = map[string]User{
+    "a": {"Peter"},
+    "b": {"Parker"},
+  }
+  m["c"] = User{"Steve"}
+
+  fmt.Println(m)
+}
+```
+
+```bash
+$ go run main.go
+map[a:{Peter} b:{Seth} c:{Steve}]
+```
+
+### Retrieve
+
+we can also retrieve our values from the map using the key.
+
+```go
+c := m["c"]
+fmt.Println("Key c:", c)
+```
+
+```bash
+$ go run main.go
+key c: {Steve}
+```
+
+What if we use a key that is not present in the map?
+
+```go
+d := m["d"]
+fmt.Println("Key d:", d)
+```
+
+```bash
+$ go run main.go
+Key c: {Steve}
+Key d: {}
+```
+
+### Exists
+
+When you retrieve the value assigned to a given key, it returns an additional boolean value as well. The boolean variable will be `true` if the key exists, and `false` otherwise.
+
+```go
+c, ok := m["c"]
+fmt.Println("Key c:", c, ok)
+
+d, ok := m["d"]
+fmt.Println("Key d:", d, ok)
+```
+
+```bash
+$ go run main.go
+Key c: {Steve} Present: true
+Key d: {} Present: false
+```
+
+### Update
+
+we can also update the value for a key by simply re-assigning a key.
+
+```go
+m["a"]="Roger"
+```
+
+```bash
+$ go run main.go
+map[a:{Roger} b:{Seth} c:{Steve}]
+```
+
+### Delete
+
+we can delete the key using the built-in `delete` function.
+
+```go
+delete(m, "a")
+```
+
+The first argument is the map, and second is the key we want to delete.
+
+The `delete()` function doesn't return any value. Also it doesn't do anything if the key doesn't exist in the map.
+
+```bash
+$ go run main.go
+map[a:{Roger} c:{Steve}]
+```
+
+### Iteration
+
+Like array or slices, we can iterate over maps with the `range` keyword.
+
+```go
+package main
+import "fmt"
+
+func main(){
+  var m = map[string]User{
+    "a": {"Peter"},
+    "b": {"Seth"},
+  }
+  m["c"] = User{"Steve"}
+  for key, value := range m{
+    fmt.Println("Key: %s, Value: %v", key, value)
+  }
+}
+```
+
+```bash
+$ go run main.go
+Key: c, Value: {Steve}
+Key: a, Value: {Peter}
+Key: b, Value: {Seth}
+```
+
+> [!NOTE]
+> Note that a map is unordered collection, and therefore the iteration order of a map is not guaranted to be same every time we iterate over it.
+
+### Properties
+
+Maps are reference types, which means when we assign a map to new variable, they both refer to the same underlying data structure.
+
+Therefore, changes done by one variable will be visible to the other.
+
+```go
+package main
+import "fmt"
+
+type User struct{
+  Name string
+}
+
+func main(){
+  var m1 = map[string]User{
+    "a": {"Peter"},
+    "b": {"Seth"},
+  }
+
+  m2 := m1
+  m2["c"]=User{"Steve"}
+  fmt.Println(m1) // Output: map[a:{Peter} b:{Seth} c:{Steve}]
+  fmt.Println(m2) // Output: map[a:{Peter} b:{Seth} c:{Steve}]
+}
+```
