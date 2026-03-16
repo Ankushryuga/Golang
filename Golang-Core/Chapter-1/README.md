@@ -92,6 +92,40 @@
     - [Delete](#delete)
     - [Iteration](#iteration-1)
     - [Properties](#properties-4)
+  - [Interfaces](#interfaces)
+    - [What is an interface?](#what-is-an-interface)
+      - [Definition](#definition)
+      - [Why interfaces are important](#why-interfaces-are-important)
+        - [Abstraction](#abstraction)
+        - [Flexibility](#flexibility)
+        - [Interface with Multiple Methods](#interface-with-multiple-methods)
+        - [Empty Interfaces (any)](#empty-interfaces-any)
+        - [Type Assertion](#type-assertion)
+        - [Interface Composition](#interface-composition)
+      - [Key Points to Remember](#key-points-to-remember)
+    - [Empty Interface](#empty-interface)
+    - [Type Assertion](#type-assertion-1)
+    - [Nil Interfaces](#nil-interfaces)
+      - [Tricky bug](#tricky-bug)
+      - [How to avoid this](#how-to-avoid-this)
+        - [Key Takeways](#key-takeways)
+    - [Pointer vs Value Receivers with Interfaces](#pointer-vs-value-receivers-with-interfaces)
+      - [Value Receiver](#value-receiver)
+      - [Pointer Receiver](#pointer-receiver)
+        - [Interface Example](#interface-example)
+        - [Quick Rule](#quick-rule)
+      - [Small Interfaces are Idiomatic Go](#small-interfaces-are-idiomatic-go)
+    - [Type Switch](#type-switch)
+    - [Properties](#properties-5)
+      - [Zero values](#zero-values-1)
+      - [Embedding](#embedding)
+      - [Interface Values](#interface-values)
+  - [Errors](#errors)
+    - [Constructing Errors](#constructing-errors)
+    - [Sentinel Errors](#sentinel-errors)
+    - [Custom Errors](#custom-errors)
+      - [What's the difference b/w "errors.Is" and "errors.As"?](#whats-the-difference-bw-errorsis-and-errorsas)
+  - [Panic and Recover](#panic-and-recover)
 
 ## Variables and Data Types
 
@@ -2602,3 +2636,780 @@ func main(){
   fmt.Println(m2) // Output: map[a:{Peter} b:{Seth} c:{Steve}]
 }
 ```
+
+## Interfaces
+
+### What is an interface?
+
+An interface in Go is an abstract type that is defined using a set of method signatures. The interface defines the behavior for similar types of objects.
+
+#### Definition
+
+An **interface** describes behavior, not data.
+
+```go
+type Speaker interface{
+  Speak() string
+}
+```
+
+This means:
+Any type that has `Speak() string` satisfies `Speaker`.
+
+```go
+package main
+import "fmt"
+
+type Speaker interface{
+  Speak() string
+}
+
+type Dog struct{}
+
+func (d Dog) Speak() string{
+  return "Woof"
+}
+
+func main(){
+  var s Speaker
+  s = Dog{}
+  fmt.Println(s.Speak())    // O/P: Woof
+}
+```
+
+Even though we **never wrote** `Dog implements Speaker`, it works because:
+
+```bash
+Dog has Speak()
+Speaker requires Speak()
+```
+
+#### Why interfaces are important
+
+Interfaces help with:
+
+##### Abstraction
+
+You care about **what something does**, not what it is.
+
+```go
+func MakeSpeak(s Speaker){
+  fmt.Println(s.Speak())
+}
+```
+
+This works with any type implementing `Speak()`.
+
+##### Flexibility
+
+```go
+type Cat struct{}
+func (c Cat) Speak() string{
+  return "Meow"
+}
+```
+
+Now this works:
+
+```bash
+MakeSpeak(Dog{})
+MakeSpeak(Cat{})
+```
+
+- Decoupling code
+
+Your functions depend on **behavior**, not **concrete types**.
+
+##### Interface with Multiple Methods
+
+```go
+type Shape interface{
+  Area() float64
+  Perimeter() float64
+}
+```
+
+```go
+type Rectangle struct{
+  Width float64
+  Height float64
+}
+
+func (r Rectangle) Area() float64{
+  return r.Width * r.Height
+}
+
+func (r Rectangle) Perimeter() float64{
+  return 2 * (r.Width * r.Height)
+}
+```
+
+##### Empty Interfaces (any)
+
+Go has a special interface:
+
+```go
+interface{}
+```
+
+or in modern Go:
+
+```go
+any
+```
+
+Example:
+
+```go
+func Print(v any){
+  fmt.Println(v)
+}
+```
+
+This accepts **any type**.
+
+```go
+Print(10)
+Print("Hello")
+Print(true)
+```
+
+##### Type Assertion
+
+When using interfaces, you sometimes want to original type.
+
+```go
+var i any = "hello"
+s := i.(string)
+fmt.Println(s)
+```
+
+This extracts the underlying value.
+
+- Safe version:
+
+```go
+s, ok := i.(string)
+if ok{
+  fmt.Println(s)
+}
+```
+
+##### Interface Composition
+
+Interface can **embed** other interfaces.
+
+```go
+type Reader interface{
+  Read()
+}
+
+type Writer interface{
+  Write()
+}
+
+type ReadWriter interface{
+  Reader
+  Writer
+}
+```
+
+`ReadWriter` now require both methods.
+
+#### Key Points to Remember
+
+| Concept                 | Meaning                         |
+| ----------------------- | ------------------------------- |
+| Interface               | defines method behavior         |
+| Implicit implementation | no `implements` keyword         |
+| Decoupling              | depend on behavior, not type    |
+| `any`                   | empty interface                 |
+| Composition             | interfaces can embed interfaces |
+
+### Empty Interface
+
+An empty interface can take on a value of any type.
+
+- declaration
+
+```go
+var x interface{}
+```
+
+Empty interface can be used to handle values of unknown types.
+
+### Type Assertion
+
+A type assertion provides access to an interface value's underlying concrete value.
+
+```go
+func main(){
+  var i interface{} = "hello"
+
+  s := i.(string)
+  fmt.Println(s)
+}
+```
+
+This statement asserts that the itnerface value holds a concrete type and assigns the underlying type value to the variable.
+
+we can also test whether an interface value holds a specific type.
+A type assertion can return 2 values:
+
+- The first one is the underlying value.
+- The second is a boolean value that reports whether the assertion succeeded.
+
+```go
+s, ok := i.(string)
+fmt.Println(s, ok)
+```
+
+### Nil Interfaces
+
+In Go, an interface internally contains 2 things
+
+```bash
+(interface)
+  ├── Type
+  └── Value
+```
+
+Example:
+
+```go
+var r io.Reader
+```
+
+Internally:
+
+```bash
+Type = nil
+Value = nil
+```
+
+So this is **truly nil**.
+
+#### Tricky bug
+
+```go
+type MyError struct{
+  msg string
+}
+
+func (e *MyError) Error() string{
+  return e.msg
+}
+
+func getError() error{
+  var e *MyError = nil
+  return e
+}
+```
+
+Now
+
+```go
+err := getError()
+
+if err != nil{
+  fmt.Println("error occurred")
+}
+```
+
+```bash
+# Output
+error occurred
+```
+
+Even though `e` was `nil`.
+
+Because the interface actually contains:
+
+```go
+Type = *MyError
+Value = nil
+```
+
+So the interface itself is **not nil**.
+
+```bash
+(type != nil) -> interface != nil
+```
+
+#### How to avoid this
+
+Return **nil explicitly**
+
+```go
+func getError() error{
+  var e *MyError = nil
+  if e == nil{
+    return nil
+  }
+  return e
+}
+```
+
+##### Key Takeways
+
+> [!IMPORTANT]
+> Nil interface bug
+> Interface is nil only if both type and value are nil.
+
+### Pointer vs Value Receivers with Interfaces
+
+Methods can have value receivers or pointer receivers.
+
+#### Value Receiver
+
+```go
+type Dog struct{}
+
+func (d Dog) Speak(){
+  fmt.Println("Woof")
+}
+```
+
+#### Pointer Receiver
+
+```go
+func (d *Dog) Speak(){
+  fmt.Println("Woof")
+}
+```
+
+##### Interface Example
+
+```go
+type Speaker interface{
+  Speak()
+}
+```
+
+Case 1 - Value Receiver
+
+```go
+func (d Dog) Speak(){}
+```
+
+Both work:
+
+```go
+var s Speaker
+
+s = Dog{}   // ok
+s = &Dog{}  // ok
+```
+
+Because Go can automatically dereference.
+
+Case 2 - Pointer Receiver
+
+```go
+func (d *Dog) Speak() {}
+```
+
+Now
+
+```go
+var s Speaker
+
+s = Dog{}   // Compile error
+s = &Dog{}  // ok
+```
+
+Because the method exists only on `*Dog`
+
+##### Quick Rule
+
+| Receiver         | Interface accepts |
+| ---------------- | ----------------- |
+| value receiver   | value + pointer   |
+| pointer receiver | pointer only      |
+
+Pointer receivers are common
+They allow:
+
+1. Modifying struct fields
+2. Avoiding large copies
+3. Consistent method sets
+
+```go
+func (u *User) UpdateEmail(email string)
+```
+
+#### Small Interfaces are Idiomatic Go
+
+Go prefers **tiny interfaces**
+Example from standard library:
+
+**Reader interface**
+`io.Reader`.
+
+```go
+type Reader interface{
+  Read(p []byte) (n int, err error)
+}
+```
+
+### Type Switch
+
+a `switch` statement can be used to determine the type of a variable of type empty `interface{}`.
+
+```go
+var t interface{}
+t = "hello"
+
+switch t := t.(type){
+  case string:
+    fmt.Printf("string: %s\n", t)
+  case bool:
+    fmt.Printf("boolean: %v\n", t)
+  case int:
+    fmt.Printf("integer: %v\n", t)
+  default:
+    fmt.Println("unexpected: %T\n", t)
+}
+```
+
+And if we run this, we can verify that we have a `string` type.
+
+```bash
+go run main.go
+string: hello
+```
+
+### Properties
+
+#### Zero values
+
+The zero value of an interface is `nil`.
+
+```go
+package main
+
+import "fmt"
+type MyInterface interface{
+  Method()
+}
+
+func main(){
+  var i MyInterface
+
+  fmt.Println(i)      // Output: <nil>
+}
+```
+
+#### Embedding
+
+we can embed interfaces like structs
+
+```go
+type interface1 interface{
+  Method1()
+}
+
+type interface2 interface{
+  Method2()
+}
+
+type interface3 interface{
+  interface1
+  interface2
+}
+```
+
+Values
+Inteface values are comparable
+
+```go
+package main
+import "fmt"
+
+type MyInterface interface{
+  Method()
+}
+
+type MyType struct{}
+
+func (MyType) Method(){}
+
+func main(){
+  t := MyType{}
+  var i MyInteface = MyType{}
+
+  fmt.Println(t==i)
+}
+```
+
+#### Interface Values
+
+An interface value can be thought of as tuple consisting of a value and a concrete type.
+
+```go
+package main
+
+import "fmt"
+type MyInterface interface{
+  Method()
+}
+
+type MyType struct{
+  property int
+}
+
+func (MyType) Method() {}
+
+func main(){
+  var i MyInterface
+  i = MyType{10}
+  fmt.Printf("(%v, %T)\n", i, i)    // O/P: ({10}, main.MyType)
+}
+```
+
+## Errors
+
+Errors are not exceptions as there is no exception handling in Go.
+
+Instead, we can just return a built-in `error` type which is an interface type.
+
+```go
+type error interface{
+  Error() string
+}
+```
+
+```go
+func Divide(a, b int) int{
+  return a/b
+}
+```
+
+### Constructing Errors
+
+There are multiple ways to do this, we will look at the 2 most common ones.
+
+1. `errors` package
+   The first is by using the `New` function provided by the `errors` package.
+
+```go
+package main
+import "errors"
+func main(){}
+
+func Divide(a, b int) (int, error){
+  if b==0{
+    return 0, errors.New("Cannot divide by zero")
+  }
+  return a/b, nil
+}
+```
+
+Notice, how we return an `error` with the result. And if there is no error we simply return `nil` as it is the zero value of an error because after all, it's an interface.
+
+How to handle it?
+
+```go
+package main
+
+import (
+  "errors"
+  "fmt"
+)
+
+func main(){
+  result, err := Divide(4,0)
+  if err!=nil{
+    fmt.Println(err)
+    // Do something with the error
+    return
+  }
+  fmt.Println(result)
+  // Use the result
+}
+
+func Divide(a, b int) (int, error) {...}
+```
+
+```bash
+$ go run main.go
+cannot divide by zero
+```
+
+As you can see, we simply check if the error is `nil` and build our logic accordingly. This is considered quite idiomatic in Go and you will see this being used a lot.
+
+Another way to construct our errors is by using the `fmt.Errorf` function.
+
+This function is similar to `fmt.Sprintf` and it lets us format our error. But instead of returing a string, it returns an error.
+
+It is often used to add some context or detail to our errors.
+
+```go
+...
+func Divide(a, b int) (int, error){
+  if b == 0{
+    return 0, fmt.Errorf("cannot divide %d by zero", a)
+  }
+  return a/b, nil
+}
+```
+
+And it should work similarly
+
+```bash
+$ go run main.go
+cannot divide 4 by zero
+```
+
+### Sentinel Errors
+
+Another important technique in Go is defining expected Errors so they can be checked explicitly in other parts of the code. These are sometimes referred to as sentinel errors.
+
+```go
+package main
+
+import (
+  "errors"
+  "fmt"
+)
+
+var ErrDivideByZero = errors.New("cannot divide by zero")
+
+func main() {...}
+
+func Divide(a, b int) (int, error){
+  if b == 0{
+    return 0, ErrDivideByZero
+  }
+  return a/b, nil
+}
+```
+
+> [!NOTE]
+> It is considered conventional to prefix the variable with `Err`. Forexample, `ErrNotFound`.
+
+**But what's the point?**
+This becomes useful when we need to execute a different branch of code if a certain kind of error is encountered.
+
+For example, now we can check explicitly which error occured using the `errors.Is` function.
+
+```go
+package main
+
+import (
+  "errors"
+  "fmt"
+)
+
+func main(){
+  result, err := Divide(4,0)
+  if err!=nil{
+    switch{
+  case errors.Is(err, ErrDivideByZero):
+        fmt.Println(err)
+        // Do something with the error
+  default:
+        fmt.Println("no Idea!")
+    }
+    return
+  }
+  fmt.Println(result)
+  // use the result
+}
+
+func Divide(a, b int) (int, error) {...}
+```
+
+```bash
+$ go run main.go
+cannot divide by zero
+```
+
+### Custom Errors
+
+This strategy covers most of the error handling use cases. But sometimes we need additional functionalities such as dynamic values inside of our errors.
+
+`error` is just an interface. So basically, anything can be an `error` as long as it implements the `Error()` method which returns an error message as a string.
+
+```go
+package main
+
+import (
+  "errors"
+  "fmt"
+)
+
+type DivisionError struct{
+  Code  int
+  Msg   string
+}
+
+func (d DivisionError) Error() string{
+  return fmt.Sprintf("Code %d: %s", d.Code, d.Msg)
+}
+
+func main() {...}
+
+func Divide(a, b int) (int, error){
+  if b==0{
+    return 0, DivisionError{
+      Code: 2000,
+      Msg: "cannot divide by zero",
+    }
+  }
+  return a/b, nil
+}
+```
+
+Here, we will use `errors.As` instead of `errors.Is` function to convert the error to the correct type.
+
+```go
+func main(){
+  result, err := Divide(4, 0)
+
+  if err!=nil{
+    var divErr DivisionError
+
+    switch {
+      case errors.As(err, &divErr):
+        fmt.Println(divErr)
+        // Do something with the error
+      default:
+        fmt.Println("no idea!")
+    }
+    return
+  }
+  fmt.Println(result)
+
+  // Use the result
+}
+
+func Divide(a, b int) (int, error) {...}
+```
+
+```bash
+$ go run main.go
+code 2000: cannot divide by zero
+```
+
+#### What's the difference b/w "errors.Is" and "errors.As"?
+
+The difference is that this function checks whether the error has a specific type, unlike the `Is` function, which examines if it's a particular error object.
+
+we can also use type assertions but it's not preferred.
+
+```go
+func main(){
+  result, err := Divide(4, 0)
+
+  if e, ok := err.(DivisionError); ok{
+    fmt.Println(e.Code, e.Msg)    // O/P: 2000 cannot divide by zero
+    return
+  }
+  fmt.Println(result)
+}
+```
+
+Error handling in Go is quite different compared to the other `try/catch` idiom in other languages.
+
+## Panic and Recover
