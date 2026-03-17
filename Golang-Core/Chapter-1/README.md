@@ -126,6 +126,16 @@
     - [Custom Errors](#custom-errors)
       - [What's the difference b/w "errors.Is" and "errors.As"?](#whats-the-difference-bw-errorsis-and-errorsas)
   - [Panic and Recover](#panic-and-recover)
+    - [Panic](#panic)
+    - [Recover](#recover)
+    - [Use cases](#use-cases)
+  - [Testing](#testing)
+    - [Table driven tests](#table-driven-tests)
+      - [Why use table-driven tests?](#why-use-table-driven-tests)
+        - [Table-driven test](#table-driven-test)
+          - [Key Concepts](#key-concepts)
+    - [Code coverage](#code-coverage)
+    - [Fuzz testing](#fuzz-testing)
 
 ## Variables and Data Types
 
@@ -3413,3 +3423,467 @@ func main(){
 Error handling in Go is quite different compared to the other `try/catch` idiom in other languages.
 
 ## Panic and Recover
+
+### Panic
+
+```go
+func panic(inteface{})
+```
+
+The panic is a built-in function that stops the normal execution of the current `goroutine`. When a function calls `panic`, the normal execution of the function stops immediately and the control is returned to the caller.
+
+This is repeated until the program exits with the panic message and stack trace.
+
+```go
+package main
+
+func main(){
+  WillPanic()
+}
+
+func WillPanic(){
+  panic("panic panic")
+}
+```
+
+And if we run this, we can see `panic` in action.
+
+```bash
+$ go run main.go
+panic: panic panic
+
+goroutine 1 [running]:
+main.WillPanic(...)
+        .../main.go:8
+main.main()
+        .../main.go:4 +0x38
+exit status 2
+```
+
+As expected, our program printed the panic message, followed by the stack trace, and then it was terminated.
+
+So, to handle this unexpected `panic`?
+
+### Recover
+
+It is possible to regain control of a panicking program using the built-in `recover` function, along with `defer` keyword.
+
+```go
+func recover() interface{}
+```
+
+Example:
+
+```go
+package main
+
+import "fmt"
+func main(){
+  WillPanic()
+}
+
+func handlePanic(){
+  data := recover()
+  fmt.Println("Recovered:", data)
+}
+
+func WillPanic(){
+  defer handlePanic()
+
+  panic("Woah")
+}
+```
+
+```bash
+$ go run main.go
+Recovered: Woah
+```
+
+`panic` and `recover` can be considered similar to the `try/catch`.
+But one important factor is that we should avoid panic and recover and use `errors` when possible.
+
+If so, then this brings us to the question, when should we use `panic`?
+
+### Use cases
+
+There are 2 valid use cases for `panic:`
+
+- An unrecoverable error
+
+Which can be a situation where the program cannot simply continue its exection.
+
+For example, reading a configuration file which is important to start the program, as there is nothing else to do if the file read itself fails
+
+- Developer error
+
+This is most common situation, dereferning a pointer when the value is `nil` will cause a panic.
+
+## Testing
+
+Testing in Go
+
+```go
+package math
+
+func Add(a, b int) int{
+  return a+b
+}
+```
+
+It's being used in our `main` pacakge like this.
+
+```go
+package main
+
+import (
+  "example/math"
+  "fmt"
+)
+
+func main(){
+  result := math.Add(2,2)
+  fmt.Println(result)
+}
+```
+
+And, if we run this, we should see the result.
+
+```bash
+$ go run main.go
+4
+```
+
+Now, we want to test our `Add` function. So, in Go, we declare test files with `_test` suffix in the file name. So for our `add.go`, we will create a test as `add_test.go`. Our project structure should look this.
+
+```bash
+.
+├── go.mod
+├── main.go
+└── math
+    ├── add.go
+    └── add_test.go
+```
+
+we will start by using a `math_test` package, and importing the `testing` package from the standard library.
+
+Testing is built into Go.
+
+we don't really need `math_test` package, we can write our test in the same package if we wanted, but writing tests in separate package help us write tests in a more decoupled way.
+
+we can create our `TestAdd` function. It will take an argument of type `testing.T` which will provide us with helpful methods.
+
+```go
+package math_test
+
+import "testing"
+
+func TestAdd(t *testing.T) {}
+```
+
+Before we add any testing logic, let's try to run it. But this time, we cannot use `go run` command, instead, we will use the `go test` command.
+
+```bash
+$ go test ./math
+ok      example/math 0.429s
+```
+
+we will have our package name which is `math`, but we can also use the relative path `./...` to test all packages.
+
+```bash
+$ go test ./...
+?       example [no test files]
+ok      example/math 0.348s
+```
+
+And if Go doesn't find any test in a package, it will let us know.
+
+```go
+package math_test
+
+import "testing"
+func TestAdd(t *testing.T){
+  got := math.Add(1,1)
+  expected := 2
+  if got != expected{
+    t.Fail()
+  }
+}
+```
+
+```bash
+$ go test math
+ok      example/math    0.412s
+```
+
+let's also see what happens if we fail the test, for that, we can simply change our expected result.
+
+```go
+package math_test
+
+import "testing"
+func TestAdd(t *testing.T){
+  got := math.Add(1,1)
+  expected := 3
+  if got != expected{
+    t.Fail()
+  }
+}
+```
+
+```bash
+$ go test ./math
+ok      example/math    (cached)
+```
+
+For optimization tests are cached. we can use the `go clean` command to clear our cache and then re-run the test.
+
+```bash
+$ go clean -testcache
+$ go test ./math
+--- FAIL: TestAdd (0.00s)
+FAIL
+FAIL    example/math    0.354s
+FAIL
+```
+
+### Table driven tests
+
+Table-driven tests in Go are a clean, idiomatic way to test multiple cases using a single test function. Instead of writing many separate tests, you define a table (slice of structs) containing inputs and expected outputs, then loop over them.
+
+#### Why use table-driven tests?
+
+- Avoid repetition(DRY)
+- Easy to add new test cases
+- Clear and readable
+- Standard and practice in Go
+
+Example
+
+```go
+func Add(a, b int) int{
+  return a+b
+}
+```
+
+##### Table-driven test
+
+```go
+func TestAdd(t *testing.T){
+  tests := []struct{
+    name      string
+    a, b      int
+    expected  int
+  }{
+    {"both positive", 2, 3, 5},
+    {"with zero", 0, 5, 5},
+    {"negative numbers", -2, -3, -5},
+    {"mixed signs", -2, 3, 1},
+  }
+
+  for _, tt := range tests{
+    t.Run(tt.name, func(t *testing.T){
+      result := Add(tt.a, tt.b)
+      if result != tt.expected{
+        t.Errorf("expected %d, got %d", tt.expected, result)
+      }
+    })
+  }
+}
+```
+
+###### Key Concepts
+
+1. Struct as test case
+   - Each struct represents one test case:
+
+```go
+{
+  name: "both positive",
+  a: 2,
+  b: 3,
+  expected: 5,
+}
+```
+
+2. Slice of test cases
+
+```go
+tests := []struct { ... }{ ... }
+```
+
+This is your table.
+
+3. Loop through tests
+
+```go
+for _, tt := range tests
+```
+
+Runs all test cases automatically.
+
+4. `t.Run()` (subtests)
+   - Runs each case as a separate test
+   - Helps with debugging and output
+
+> [!NOTE]
+> When using `t.Run` inside loops:
+
+```go
+for _, tt := range tests{
+  tt := tt  // capture variable
+  t.Run(tt.name, func(t *testing.T){
+    ...
+  })
+}
+```
+
+Without this, Go may reuse the loop variable -> buggy tests
+
+Error Testing
+
+```go
+func Divide(a, b int)(int, error){
+  if b == 0 {
+    return 0, errors.New("division by zero")
+  }
+  return a/b, nil
+}
+
+func TestDivide(t *testing.T){
+  tests := []struct{
+    name      string
+    a, b      int
+    want      int
+    wantErr   bool
+  }{
+    {"valid", 10, 2, 5, false},
+    {"divide by zero", 10, 0, 0, true},
+  }
+
+  for _, tt := range tests{
+    tt := tt
+    t.Run(tt.name, func(t *testing.T){
+      got, err := Divide(tt.a, tt.b)
+
+      if (err != nil) != tt.wantErr{
+        t.Errorf("expected error: %v, got: %v", tt.wantErr, err)
+      }
+      if got != tt.want{
+        t.Errorf("expected %d, got %d", tt.want, got)
+      }
+    })
+  }
+}
+```
+
+```go
+package math_test
+
+import (
+  "example/math"
+  "testing"
+)
+
+type addTestCase struct{
+  a, b, expected int
+}
+
+var testCases = []addTestCase{
+  {1, 1, 2},
+  {25, 25, 50},
+  {2, 1, 3},
+  {1, 10, 11},
+}
+
+func TestAdd(t *testing.T){
+  for _, tc := range testCases{
+    got := math.Add(tc.a, tc.b)
+    if got != tc.expected{
+      t.Errorf("Expected %d but got %d", tc.expected, got)
+    }
+  }
+}
+```
+
+As you can notice that `addTestCase` declared with a lower case. because we don't want to export it.
+
+```bash
+$ go run main.go
+ok      example/math    0.589s
+```
+
+Table-Driven tests use"
+
+1. Same logic tested with different inputs.
+2. You want scalable and clean test cases
+
+### Code coverage
+
+when writing tests, it is often important to know how much of your actual code the tests cover. This is generally referred to as code coverage.
+
+To calculate and export the coverage for our test, we can simply use the `-coverprofile` argument with the `go test` command.
+
+```bash
+$ go test ./math -coverprofile=coverage.out
+ok      example/math    0.385s  coverage: 100.0% of statements
+```
+
+- Use `go tool cover` To check the report.
+
+### Fuzz testing
+
+Fuzz testing which was introduced in Go 1.18.
+
+Fuzzing is a type of automated testing that continuously manipulates inputs to a program to find bugs.
+
+Go fuzzing uses coverage guidance to intelligently walk through the code being fuzzed to find and report failure to the user.
+
+Since it can reach edge cases that human often miss, fuzz testing can be particularly valuable for finding bugs and security exploits
+
+```go
+func FuzzTestAdd(f *testing.F) {
+	f.Fuzz(func(t *testing.T, a, b int) {
+		math.Add(a , b)
+	})
+}
+```
+
+if we run this, we'll see that it'll automatically create test cases. Because our `Add` funciton is quite simple, tests will pass.
+
+```bash
+$ go test -fuzz FuzzTestAdd example/math
+fuzz: elapsed: 0s, gathering baseline coverage: 0/192 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 192/192 completed, now fuzzing with 8 workers
+fuzz: elapsed: 3s, execs: 325017 (108336/sec), new interesting: 11 (total: 202)
+fuzz: elapsed: 6s, execs: 680218 (118402/sec), new interesting: 12 (total: 203)
+fuzz: elapsed: 9s, execs: 1039901 (119895/sec), new interesting: 19 (total: 210)
+fuzz: elapsed: 12s, execs: 1386684 (115594/sec), new interesting: 21 (total: 212)
+PASS
+ok      foo 12.692s
+```
+
+But if we update our `Add` function with a random edge case such that the program will panic if `b+10` is greater than `a`.
+
+```go
+func Add(a, b int) int{
+  if a>b+10{
+    panic("B must be greater than A")
+  }
+  return a+b
+}
+```
+
+And if we re-run the test, this edge case will be caught by fuzz testing.
+
+```go
+$ go test -fuzz FuzzTestAdd example/math
+warning: starting with empty corpus
+fuzz: elapsed: 0s, execs: 0 (0/sec), new interesting: 0 (total: 0)
+fuzz: elapsed: 0s, execs: 1 (25/sec), new interesting: 0 (total: 0)
+--- FAIL: FuzzTestAdd (0.04s)
+    --- FAIL: FuzzTestAdd (0.00s)
+        testing.go:1349: panic: B is greater than A
+```
+
+> [GO Fuzzing]
+> [https://go.dev/doc/security/fuzz/](https://go.dev/doc/security/fuzz/)
