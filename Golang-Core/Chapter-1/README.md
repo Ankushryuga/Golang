@@ -142,7 +142,10 @@
     - [When to use generics?](#when-to-use-generics)
   - [Concurrency](#concurrency)
     - [Concurrency vs Parallelism](#concurrency-vs-parallelism)
+    - [Communicating Sequential Processes (CSP)](#communicating-sequential-processes-csp)
+      - [Basic Concepts](#basic-concepts)
     - [What is Concurrency](#what-is-concurrency)
+  - [Goroutines](#goroutines)
 
 ## Variables and Data Types
 
@@ -4110,7 +4113,73 @@ Concurrency in **Go** is one of its most powerful features - it allows your prog
 
 ![alt text](image-3.png)
 
-Concurrency is the task of running and managing multiple computations at the same time, while parallelism is the task of running multiple computations simultaneously.
+- Concurrency => Concurrency is about structing a program to handle multiple tasks at once, even if they are not running simultaneously.
+
+- Parallelism => It's about actually executing multiple tasks at the same time.
+  - Requires
+    - Multiple CPU cores
+    - Hardware support
+
+| Aspect     | Concurrency           | Parallelism                  |
+| ---------- | --------------------- | ---------------------------- |
+| Goal       | Manage multiple tasks | Execute tasks simultaneously |
+| Execution  | Interleaved           | Truly simultaneous           |
+| CPU cores  | Can be single core    | Requires multiple cores      |
+| Focus      | Structure & design    | Performance & speed          |
+| Go support | Goroutines (always)   | Goroutines + multiple cores  |
+
+### Communicating Sequential Processes (CSP)
+
+CSP allows us to give a better structure to our concurrent code and provides a model for thinking about concurrency in a way that makes it a little easier.
+
+#### Basic Concepts
+
+1. Data Race
+   A data race occurs when processes have to access the same resource concurrently.
+
+2. Race Conditions
+
+   A race condition occurs when the timing or order of events affects the correctness of a piece of code.
+
+3. Deadlocks
+   A deadlock occurs when all processes are blocked while waiting for each other and the program cannot proceed further.
+
+4. Coffman conditions
+   There are four conditions, known as Coffman conditions, all of them must be satisfied for a deadlock to occur.
+
+- Mutual Exclusion
+
+A concurrent process hold at least one resource at any one time making it non-sharable.
+
+![alt text](image-4.png)
+
+- Hold and wait
+
+A concurrent process holds a resource and is waiting for an additional resource.
+
+![alt text](image-5.png)
+
+- No preemption
+
+A resource held by a concurrent process cannot be taken away by the system. It can only be freed by the process holding it.
+
+![alt text](image-6.png)
+
+- Circular wait
+
+A process is waiting for the resource held by the second process, which is waiting for the resource held by the third process, and so on, till the last process is waiting for a resouce held by the first process. Hence, forming a circular chain
+
+![alt text](image-7.png)
+
+- Livelocks
+
+Livelocks are processes that are actively performing concurrent operations, but these operations do nothing to move the state of the program forward.
+
+- Starvation
+
+Starvation happens when a process is deprived of necessary resources and is unable to complete its function.
+
+Starvation can heppen because of deadlocks or inefficient scheduling algorithms for processes. In order to solve starvation, we need to employ better resource-allotment algorithms that make sure that every process gets its fair share of resouces.
 
 ### What is Concurrency
 
@@ -4123,3 +4192,5 @@ In Go, concurrency is built around:
 - **Goroutines**
 - **Channels**
 - **Select Statement**
+
+## Goroutines
