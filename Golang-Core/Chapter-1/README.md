@@ -136,6 +136,13 @@
           - [Key Concepts](#key-concepts)
     - [Code coverage](#code-coverage)
     - [Fuzz testing](#fuzz-testing)
+  - [Generics](#generics)
+    - [What are Generics?](#what-are-generics)
+    - [we can define a generic function.](#we-can-define-a-generic-function)
+    - [When to use generics?](#when-to-use-generics)
+  - [Concurrency](#concurrency)
+    - [Concurrency vs Parallelism](#concurrency-vs-parallelism)
+    - [What is Concurrency](#what-is-concurrency)
 
 ## Variables and Data Types
 
@@ -3887,3 +3894,232 @@ fuzz: elapsed: 0s, execs: 1 (25/sec), new interesting: 0 (total: 0)
 
 > [GO Fuzzing]
 > [https://go.dev/doc/security/fuzz/](https://go.dev/doc/security/fuzz/)
+
+## Generics
+
+Geneic feature was released with Go 1.18.
+
+### What are Generics?
+
+Generics allow programmaers to write code where the type can be specified later because the type isn't immediately relevant.
+
+```go
+package main
+
+import "fmt"
+
+func sumInt(a, b int) int{
+  return a+b
+}
+
+func sumFloat(a, b float64) float64{
+  return a+b
+}
+
+func sumString(a, b string) string{
+  return a+b
+}
+
+func main(){
+  fmt.Println(sumInt(1, 2))
+  fmt.Println(sumFloat(4.0, 2.0))
+  fmt.Println(sumString("a", "b"))
+}
+```
+
+These functions are pretty similar.
+
+### we can define a generic function.
+
+```go
+func fnName[T constraint](){
+  ...
+}
+```
+
+`T` is our type parameter and `constraint` will be the interface that allows any type implementing the interface.
+
+`T` as our type parameter with an empty `interface{}` as our constraint.
+
+```go
+func sum[T interface{}](a, b T) T {
+  fmt.Println(a, b)
+}
+```
+
+> [!NOTE]
+> Starting with **Go 1.18** we can use `any`, which is pretty much equivalent to the empty interface.
+
+```go
+func sum[T any](a, b T) T {
+  fmt.Println(a, b)
+}
+```
+
+With type parameters, comes the need to pass type arguments, which can make our code verbose.
+
+```go
+sum[int](1, 2)  // explicit type argument
+sum[float64](4.0, 2.0)
+sum[string]("a", "b")
+```
+
+Go 1.18 comes with **type interface** which helps us to write code that calls generic functions without explicit types.
+
+```go
+sum(1, 2)
+sum(4.0, 2.0)
+sum("a", "b")
+```
+
+```bash
+$ go run main.go
+1 2
+4 2
+a b
+```
+
+Now, let's update the `sum` function to add our variables.
+
+```go
+func sum[T any](a, b T) T {
+	return a + b
+}
+```
+
+```go
+fmt.Println(sum(1, 2))
+fmt.Println(sum(4.0, 2.0))
+fmt.Println(sum("a", "b"))
+```
+
+Running this will give error:
+
+```bash
+$ go run main.go
+./main.go:6:9: invalid operation: operator + not defined on a (variable of type T constrained by any)
+```
+
+while constraint of type `any` generally works it does not support operators.
+
+![alt text](image-2.png)
+
+```go
+type SumConstraint interface{
+  int | float64 | string
+}
+
+func sum[T SumConstraint](a, b T) T {
+  return a+b
+}
+
+func main(){
+  fmt.Println(sum(1, 2))
+  fmt.Println(sum(4.0, 2.0))
+  fmt.Println(sum("a", "b"))
+}
+```
+
+```bash
+$ go run main.go
+3
+6
+ab
+```
+
+we can also use the `constraints` package which defines a set of useful constraints to be used with type parameters.
+
+```go
+type Signed interface{
+  ˜int | ˜int8 | ˜int16 | ˜int32 | ˜int64
+}
+
+type Unsigned interface{
+  ˜uint | ˜uint8 | ˜uint16 | ˜uint32 | ˜uint64 | ˜uintptr
+}
+
+type Integer interface{
+  Signed | Unsigned
+}
+
+type Float interface{
+  ˜float32 | ˜float64
+}
+
+type Complex interface{
+  ˜complex64 | ˜complex128
+}
+
+type Ordered interface{
+  Integer | Float | ˜string
+}
+```
+
+For that, we will need to install the `constraints` pacakge.
+
+```bash
+$ go get golang.org/x/exp/constraints
+go: added golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
+```
+
+```go
+import (
+  "fmt"
+  "golang.org/x/exp/constraints"
+)
+
+func sum[T constraints.Ordered](a, b T) T{
+  return a+b
+}
+
+func main(){
+  fmt.Println(sum(1, 2))
+  fmt.Println(sum(4.0, 2.0))
+  fmt.Println(sum("a", "b"))
+}
+```
+
+Here we are using the `Ordered` constraint.
+
+```go
+type Ordered interface{
+  Integer | Float | ˜string
+}
+```
+
+`˜` is a new token added to Go and the expression `˜string` means the set of all types whose underlying type is `string`.
+
+```bash
+$ go run main.go
+3
+6
+ab
+```
+
+### When to use generics?
+
+1. Functions that operate on arrays, slices, maps, and channels.
+2. General purpose data structure like stack or linked list.
+3. To reduce code duplication.
+
+## Concurrency
+
+Concurrency in **Go** is one of its most powerful features - it allows your program to run multiple tasks independently and efficiently.
+
+### Concurrency vs Parallelism
+
+![alt text](image-3.png)
+
+Concurrency is the task of running and managing multiple computations at the same time, while parallelism is the task of running multiple computations simultaneously.
+
+### What is Concurrency
+
+Concurrency means:
+
+- Handling multiple tasks at the same time (not necessarily executing them simultaneously).
+
+In Go, concurrency is built around:
+
+- **Goroutines**
+- **Channels**
+- **Select Statement**
