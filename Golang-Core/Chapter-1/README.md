@@ -146,6 +146,49 @@
       - [Basic Concepts](#basic-concepts)
     - [What is Concurrency](#what-is-concurrency)
   - [Goroutines](#goroutines)
+    - [What is a goroutine?](#what-is-a-goroutine)
+    - [Fork-Join Model](#fork-join-model)
+  - [Channels](#channels)
+    - [What are channels?](#what-are-channels)
+    - [Creating a channel](#creating-a-channel)
+    - [Sending and Receiving data](#sending-and-receiving-data)
+    - [Buffered Channels](#buffered-channels)
+    - [Directional Channels](#directional-channels)
+    - [Closing Channels](#closing-channels)
+    - [Properties](#properties-6)
+  - [Select](#select)
+  - [Sync Package](#sync-package)
+    - [WaitGroup](#waitgroup)
+      - [Usage](#usage)
+    - [Mutex](#mutex)
+      - [What's a critical section?](#whats-a-critical-section)
+      - [Usage](#usage-1)
+    - [RWMutex](#rwmutex)
+      - [Usage](#usage-2)
+    - [Cond](#cond)
+      - [Why do we need it?](#why-do-we-need-it)
+      - [Usage](#usage-3)
+    - [Once](#once)
+      - [Usage](#usage-4)
+    - [Pool](#pool)
+      - [Why do we need it?](#why-do-we-need-it-1)
+      - [Usage](#usage-5)
+    - [Map](#map)
+      - [Why do we need it?](#why-do-we-need-it-2)
+      - [Usage](#usage-6)
+    - [Atomic](#atomic)
+      - [Usage](#usage-7)
+  - [Advanced Concurrency Patterns](#advanced-concurrency-patterns)
+    - [Generator](#generator)
+    - [Fan-in](#fan-in)
+    - [Fan-out](#fan-out)
+    - [Pipeline](#pipeline)
+    - [Worker Pool](#worker-pool)
+    - [Queuing](#queuing)
+    - [Additional patterns](#additional-patterns)
+  - [Context](#context)
+    - [Types](#types)
+      - [Context](#context-1)
 
 ## Variables and Data Types
 
@@ -4194,3 +4237,1448 @@ In Go, concurrency is built around:
 - **Select Statement**
 
 ## Goroutines
+
+### What is a goroutine?
+
+A goroutine is a lightweight thread of exection that is managed by the Go runtime and essentially let us write asynchronous code in a synchronous manner.
+
+> [!IMPORTANT]
+> goroutines are not actual OS threads and the main function itself runs as a goroutine.
+
+A single thread may run thousands of goroutines in them by using the Go runtime scheduler which uses cooperative scheduling. This implies that if the current goroutine is blocked or has been completed, the scheduler will move the other goroutines to another OS thread. Hence, we achieve efficiency in scheduling where no routine is blocked forever.
+
+- we can turn any function into a goroutine by simply using the `go` keyword.
+
+```go
+go fn(x, y, z)
+```
+
+### Fork-Join Model
+
+Go uses the idea of the fork-join model of concurrency behind goroutines. The fork-join model essentially implies that a child process splits from its parent process to run concurrently with the parent process. After completing its execution, the child process merges back into the parent process. The point where it joins back is called the **join point**.
+
+![alt text](image-8.png)
+
+```go
+package main
+
+import "fmt"
+
+func speak(arg string){
+  fmt.Println(arg)
+}
+
+func main(){
+  go speak("Hello world")
+  time.Sleep(1 * time.Second)
+}
+```
+
+`speak` function call is prefixed with the `go` keyword. This will allow it to run as a separate goroutine. And that's it, we just created our first goroutine.
+
+This works, but it's not ideal. So how do we improve this?
+
+Well, the most tricky part about using goroutines is knowing when they will stop. It is important to know that goroutines run in the same address space, so access to shared memory must be synchronized.
+
+## Channels
+
+### What are channels?
+
+A channel is a communications pipe b/w goroutines. Things go in one end and come our another in the same order until the channel is closed.
+
+![alt text](image-9.png)
+
+Channels in Go are based on Communicating Sequential Processes (CSP).
+
+### Creating a channel
+
+```go
+var ch chan T
+```
+
+Here, we prefix our type `T` which is the data type of the value we want to send and receive with the keyword `chan` which stands for a channel.
+
+- Let's try printing the value of our channel `ch` of type `string`.
+
+```go
+func main(){
+  var ch chan string
+
+  fmt.Println(ch)
+}
+```
+
+```bash
+$ go run main.go
+<nil>
+```
+
+> [!NOTE]
+> Zero value of a channel is `nil` and if we try to send data over the channel our program will panic.
+> So, similar to slices we can initialize our channel using the build-in `make` function.
+
+```go
+func main(){
+  ch := make(chan string)
+
+  fmt.Println(ch)
+}
+```
+
+And if we run this, we can see our channel was initialized.
+
+```bash
+$ go run main.go
+0x1400010e060
+```
+
+### Sending and Receiving data
+
+Now that we have basic understanding of channels, let us implement our earlier example using channels.
+
+```go
+package main
+
+import "fmt"
+
+func speak(arg string, ch chan string){
+  ch <- arg     // Send
+}
+
+func main(){
+  ch := make(chan string)
+
+  go speak("Hello world", ch)
+
+  data := <-ch    // Receive
+  fmt.Println(data)
+}
+```
+
+> [!NOTE]
+> Notice how we can send data using the `channel<-data` and receive data using the `data := <-channel` syntax.
+
+```bash
+$ go run main.go
+Hello World
+```
+
+### Buffered Channels
+
+We also have buffered channels that accepts a limited number of values without a corresponding receiver for those values.
+
+![alt text](image-10.png)
+
+This buffer length or capacity can be specified using the second argument to the `make` function.
+
+```go
+func main(){
+
+  ch := make(chan string, 2)
+
+  go speak("Hello World", ch)
+  go speak("Hi again", ch)
+
+  data1 := <-ch
+  fmt.Println(data1)
+
+  data2 := <-ch
+  fmt.Println(data2)
+}
+```
+
+Because this channel is buffered, we can send these values into the channel without a corresponding concurrent receive. This means sends to a buffered channel block only when the buffer is full and receives block when the buffer is empty.
+
+By default, a channel is unbuffered and has a capacity of 0, hence, we omit the second argument of the `make` function.
+
+### Directional Channels
+
+When using channels as function parameters, we can specify if a channel is meant to only send or receive values. This increases the type-safety of our program as by default a channel can both send and receive values.
+
+![alt text](image-11.png)
+
+```go
+func speak(arg string, ch chan<- string){
+  ch <- arg   // Send only
+}
+```
+
+Here, `chan<-` can only be used for sending values and will panic if we try to receive values.
+
+### Closing Channels
+
+Just like any other resource, once we're done with our channel, we need to close it. This can be achieved using the built-in `close` function.
+
+Here, we can just pass our channel to the `close` function.
+
+```go
+func main(){
+  ch := make(chan string, 2)
+
+  go speak("Hello World", ch)
+  go speak("Hi again", ch)
+
+  data1 := <-ch
+  fmt.Println(data1)
+
+  data2 := <-ch
+  fmt.Println(data2)
+
+  close(ch)
+}
+```
+
+Optinally, receivers can test whether a channel has been closed by assigning a second parameter to the receive expression.
+
+```go
+func main(){
+  ch := make(chan string, 2)
+
+  go speak("Hello world", ch)
+  go speak("Hi again", ch)
+
+  data1 := <-ch
+  fmt.Println(data1)
+
+  data2, ok := <-ch
+  fmt.Println(data2, ok)
+
+  close(ch)
+}
+```
+
+> [!NOTE]
+> if `ok` is `false` then there are no more values to receive and the channel is closed.
+
+In a way, this is similar to how we check if a key exists or not in a map.
+
+### Properties
+
+- A send to a `nil` channel blocks forever.
+
+```go
+var c chan string
+c <- "Hello, World!"  // Panic: all goroutines are asleep - deadlock!
+```
+
+- A receive from a `nil` channel block forever
+
+```go
+var c chan string
+fmt.Println(<-c)    // Panic: all goroutines are asleep - deadlock!
+```
+
+- A send to a closed channel causes a panic.
+
+```go
+var c = make(chan string, 1)
+c <- "Hello, World!"
+close(c)
+c <- "Hello, Panic!"    // Panic: Send on closed channel
+```
+
+- A receive from a closed channel returns the zero value immediately.
+
+```go
+var c = make(chan int, 2)
+c <- 5
+c <- 4
+close(c)
+
+for i:=0; i<4; i++{
+  fmt.Printf("%d", <-c)     // Output: 5 4 0 0
+}
+```
+
+- Range over channels
+  we can also use `for` and `range` to iterate over values received from a channel.
+
+```go
+package main
+
+import "fmt"
+func main(){
+  ch := make(chan string, 2)
+  ch <- "Hello"
+  ch <- "World"
+
+  close(ch)
+
+  for data := range ch{
+    fmt.Println(data)
+  }
+}
+```
+
+## Select
+
+The `select` statement blocks the code and waits for multiple channel operations simultaneously.
+
+A `select` blocks until one of its cases can run, then it executes that case. It chooses one at random if multiple are ready.
+
+```go
+package main
+
+import (
+  "fmt"
+  "time"
+)
+
+func main(){
+  one := make(chan string)
+  two := make(chan string)
+
+  go func(){
+    time.Sleep(time.Second * 2)
+    one <- "One"
+  }()
+
+  go func(){
+    time.Sleep(time.Second * 1)
+    two <- "Two"
+  }()
+
+  select{
+    case result := <-one:
+      fmt.Println("Received:", result)
+    case result := <-two:
+      fmt.Println("Received:", result)
+  }
+
+  close(one)
+  close(two)
+}
+```
+
+Similar to `switch`, `select` also has a default case that runs if no other case is ready. This will help us send or receive without blocking.
+
+```go
+func main(){
+  one := make(chan string)
+  two := make(chan string)
+
+  for x := 0; x < 10; x++{
+    go func(){
+      time.Sleep(time.Second * 2)
+      one <- "One"
+    }()
+
+    go func(){
+      time.Sleep(time.Second * 1)
+      two <- "Two"
+    }()
+  }
+
+  for x:=0; x<10; x++{
+    select{
+      case result := <-one:
+        fmt.Println("Received: ", result)
+      case result := <-two:
+        fmt.Println("Received: ", result)
+      default:
+        fmt.Println("Default...")
+        time.Sleep(200 * time.Millisecond)
+    }
+  }
+  close(one)
+  close(two)
+}
+```
+
+> [!IMPORTANT]
+> It's also important to know that an empty `select {}` blocks forever.
+
+```go
+func main(){
+  ...
+  select {}
+  close(one)
+  close(two)
+}
+```
+
+## Sync Package
+
+Goroutines run in the same address space, so access to shared memory must be synchronized. The `sync` pacakge provides useful primitives.
+
+### WaitGroup
+
+A WaitGroup waits for a collection of goroutines to finish. The main gorountine calls `Add` to set the number of goroutines to wait for. Then each of the goroutines runs and calls `Done` when finished. At the same time, `Wait` can be used to block until all goroutines have finished.
+
+#### Usage
+
+We can use the `sync.WaitGroup` using the following methods:
+
+- `Add(delta int)` takes in an integer value which is essentially the number of goroutines that `WaitGroup` has to wait for. This must be called before we execute a goroutine.
+
+- `Done()` is called within the goroutine to signal that the goroutine has successfully executed.
+- `Wait()` blocks the program until all the goroutines specified by `Add()` have invoked `Done()` from within.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+func work(){
+  fmt.Println("working...")
+}
+
+func main(){
+  var wg sync.WaitGroup
+
+  wg.Add(1)
+  go func(){
+    defer wg.Done()
+    work()
+  }()
+  wg.Wait()
+}
+```
+
+if we run this, we can see our program runs as expected.
+
+```bash
+$ go run main.go
+working...
+```
+
+we can also pass the `WaitGroup` to the function directly.
+
+```go
+func work(wg *sync.WaitGroup){
+  defer wg.Done()
+  fmt.Println("working...")
+}
+
+func main(){
+  var wg sync.WaitGroup
+
+  wg.Add(1)
+  go work(&wg)
+  wg.Wait()
+}
+```
+
+> [!IMPORTANT]
+> `WaitGroup` **must not be copied** after first use. And if it's explicitly passed into functions. it should be done by a pointer. This is because it can affect our counter which will disrupt the logic of our program.
+
+```go
+func main(){
+  var wg sync.WaitGroup
+
+  wg.Add(4)
+  go work(&wg)
+  go work(&wg)
+  go work(&wg)
+  go work(&wg)
+
+  wg.Wait()
+}
+```
+
+And as expected, all our goroutines were executed.
+
+```bash
+$ go run main.go
+working...
+working...
+working...
+working...
+```
+
+### Mutex
+
+A mutex is a mutal exclusion lock that prevents other processes from entering a critical section of data while a process occupies it to prevent race conditions from happening.
+
+#### What's a critical section?
+
+A critical section can be a piece of code that must not be run by multiple threads at once because the code contains shared resources.
+
+#### Usage
+
+We can use `sync.Mutex` using the following methods
+
+- `Lock()` acquires or holds the lock.
+- `Unlock()` releases the lock.
+- `TryLock()` tries to lock and reports whether it succeeded.
+
+Example
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+type Counter struct{
+  value int
+}
+
+func (c *Counter) Update(n int, wg *sync.WaitGroup){
+  defer wg.Done()
+  fmt.Printf("Adding %d to %d\n", n, c.value)
+  c.value += n
+}
+
+func main(){
+  var wg sync.WaitGroup
+  c := Counter{}
+  wg.Add(4)
+
+  go c.Update(10, &wg)
+  go c.Update(-5, &wg)
+  go c.Update(25, &wg)
+  go c.Update(19, &wg)
+
+  wg.Wait()
+  fmt.Printf("Result is %d", c.value)
+}
+```
+
+```bash
+$ go run main.go
+Adding -5 to 0
+Adding 10 to 0
+Adding 19 to 0
+Adding 25 to 0
+Result is 49
+```
+
+This doesn't look accurate, seems like our value is always zero but we somehow got the correct answer.
+
+Well, this is because, in our example, multiple goroutines are updating the `value` variable. And as you must have guessed, this is not ideal.
+
+This is perfect use case for Mutex. So let's start by using `sync.Mutex` and wrap our critical section in between `Lock()` and `Unlock()` methods.
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+type Counter struct{
+  m       sync.Mutex
+  value   int
+}
+
+func (c *Counter) Update(n int, wg *sync.WaitGroup){
+  c.m.Lock()
+  defer wg.Done()
+  fmt.Printf("Adding %d to %d\n", n, c.value)
+  c.value += n
+  c.m.Unlock()
+}
+
+func main(){
+  var wg sync.WaitGroup
+
+  c := Coutner{}
+  wg.Add(4)
+
+  go c.Update(10, &wg)
+  go c.Update(-5, &wg)
+  go c.Update(25, &wg)
+  go c.Update(19, &wg)
+
+  wg.Wait()
+  fmt.Printf("Result is %d", c.value)
+}
+```
+
+```bash
+$ go run main.go
+Adding -5 to 0
+Adding 19 to -5
+Adding 25 to 14
+Adding 10 to 39
+Result is 49
+```
+
+> [!NOTE]
+> Similar to WaitGroup a Mutex **must not be copied** after first use.
+
+### RWMutex
+
+An RWMutex is a reader/writer mutual exclusion lock. The lock can be held by an arbitrary number of readers or a single writer.
+
+readers don't have to wait for each other. They only have to wait for writers holding the lock.
+
+`sync.RWMutex` is thus preferable for data that is mostly read, and the resource that is saved compared to a `sync.Mutex` is time.
+
+#### Usage
+
+Similar to `sync.Mutex`, we can use `sync.RWMutex` using the following methods:
+
+- `Lock()` acquires or holds the lock.
+- `Unlock()` releases the lock.
+- `RLock()` acquires or holds the read lock.
+- `RUnlock()` releases the read lock.
+
+> [IMPORTANT]
+> `RWMutex` has additional `RLock` and `RUnlock` method compared to **Mutex**.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+  "time"
+)
+
+type Counter struct{
+  m     sync.RWMutex
+  value int
+}
+
+func (c *Counter) Update(n int, wg *sync.WaitGroup){
+  defer wg.Done()
+
+  c.m.Lock()
+  fmt.Printf("Adding %d to %d\n", n, c.value)
+  c.value += n
+  c.m.Unlock()
+}
+
+func (c *Counter) GetValue(wg *sync.WaitGroup){
+  defer wg.Done()
+
+  c.m.RLock()
+  defer c.m.RUlokc()
+  fmt.Println("Get value:", c.value)
+  time.Sleep(400 * time.Millisecond)
+}
+
+func main(){
+  var wg sync.WaitGroup
+
+  c := Counter{}
+  wg.Add(4)
+
+  go c.Update(10, &wg)
+  go c.GetValue(wg)
+  go c.GetValue(wg)
+  go c.GetValue(&wg)
+
+  wg.Wait()
+}
+```
+
+```bash
+$ go run main.go
+Get value: 0
+Adding 10 to 0
+Get value: 10
+Get value: 10
+```
+
+> [!NOTE]
+> Both `sync.Mutex` and `sync.RWMutex` implements the `sync.Locker` interface.
+
+```go
+type Locker interface{
+  Lock()
+  Unlock()
+}
+```
+
+### Cond
+
+The `sync.Cond` condition variable can be used to coordinate those goroutines that want to share resources. When the state of shared resources changes, it can be used to notify goroutines blocked by a mutex.
+
+Each Cond has an associated lock (often a `*Mutex` or `*RWMutex`), which must be held when changing the condition and when calling the Wait method.
+
+#### Why do we need it?
+
+One scenario can be when one process is receiving data, and other processes must wait for this process to receive data before they can read the correct data.
+
+if we simply use a `channel` or `mutex`, only one process can wait and read the data. There is no way to notify other processes to read the data. Thus, we can `sync.Cond` to coordinate shared resources.
+
+#### Usage
+
+`sync.Cond` comes with the following methods:
+
+- `NewCond(l Locker)` returns a new Cond.
+- `BroadCast()` wakes all goroutines waiting on the condition.
+- `Signal()` wakes one goroutine waiting on the condition if there is any.
+- `Wait()` automatically unlocks the underlying mutext lock.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+  "time"
+)
+
+var done = false
+
+func read(name string, c *sync.Cond){
+  c.L.Lock()
+  for !done{
+    c.Wait()
+  }
+  fmt.Println(name, "starts reading")
+  c.L.Unlock()
+}
+
+func write(name string, c *sync.Cond){
+  fmt.Println(name, "starts writing")
+  time.Sleep(time.Second)
+
+  c.L.Lock()
+  done = true
+  c.L.Unlock()
+
+  fmt.Println(name, "wakes all")
+  c.Broadcast()
+}
+
+func main(){
+  var m sync.Mutex
+  cond := sync.NewCond(&m)
+
+  go read("Reader 1", cond)
+  go read("Reader 2", cond)
+  go read("Reader 3", cond)
+  write("Writer", cond)
+
+  time.Sleep(4 * time.Second)
+}
+```
+
+```bash
+$ go run main.go
+Writer starts writing
+Writer wakes all
+Reader 2 starts reading
+Reader 3 starts reading
+Reader 1 starts reading
+```
+
+### Once
+
+Once ensures that only one execution will be carried out even among several goroutines.
+
+#### Usage
+
+Unlike other primitives, `sync.Once` only has a single method:
+
+- `Do(f func())` calls the function `f` **only once**. If `Do` is called multiple times, only the first call will invoke the function `f`.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+func main(){
+  var count int
+
+  increment := func(){
+    count++
+  }
+
+  var once sync.Once
+
+  var increments sync.WaitGroup
+  increments.Add(100)
+
+  for i:=0; i<100; i++{
+    go func(){
+      defer increments.Done()
+      once.Do(increment)
+    }()
+  }
+
+  increments.Wait()
+  fmt.Printf("Count is %d\n", count)
+}
+```
+
+```bash
+$ go run main.go
+Count is 1
+```
+
+As we can see, even when we ran 100 goroutines, the count only got incremented once.
+
+### Pool
+
+Pool is a scalable pool of temporary objects and is also concurrency safe. Any stored value in the pool can be deleted at any time without receiving notification. In addition, under high load, the object pool can be dynamically expanded, and when it is not used or the concurrency is not high, the object pool will shrink.
+
+The key idea is the reuse of objects to avoid repeated creation and destruction, which will affect the performance.
+
+#### Why do we need it?
+
+Pool's purpose is to cache allocated but unused items for later reuse, relieving pressure on the garbage collector. That is, it makes it easy to build efficient, thread-safe free lists. However, it is not suitable for all free lists.
+
+The appropriate use of a pool is to manage a group of temporary items silently shared among and potentially reused by concurrent independent clients of a package. Pool provides a way to spread the cost of allocation overhead across many clients.
+
+It is important to note that Pool also has its performance cost. It is much slower to use `sync.Pool` than simple initialization. Also, a _Pool must not be copied after first use_.
+
+#### Usage
+
+`sync.Pool` gives us the following methods:
+
+1. `Get()` selects an arbitrary item from the Pool, remove it from the Pool, and returns it to the caller.
+2. `Put(x any)` adds the item to the pool.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+type Person struct{
+  Name string
+}
+
+var pool = sync.Pool{
+  New: func() any{
+    fmt.Println("Creating a new person...")
+    return &Person{}
+  },
+}
+
+func main(){
+  person := pool.Get().(*Person)
+  fmt.Println("Get object from sync.Pool for the first time:", person)
+
+  fmt.Println("Put the object back in the pool")
+  pool.Put(person)
+
+  person.Name = "Gopher"
+  fmt.Println("Set object property name:", person.Name)
+
+  fmt.Println("Get object from pool again (it's updated):", pool.Get().(*Person))
+  fmt.Println("There is no object in the pool now (new one will be created):", pool.Get().(*Person))
+}
+```
+
+```go
+$ go run main.go
+Creating a new person...
+Get object from sync.Pool for the first time: &{}
+Put the object back in the pool
+Set object property name: Gopher
+Get object from pool again (it's updated): &{Gopher}
+Creating a new person...
+There is no object in the pool now (new one will be created): &{}
+```
+
+> [!IMPORTANT]
+> It can be seen that the `sync.Pool` is strictly a temporary object pool, which is suitable for storing some temporary objects that will be shared among goroutines.
+
+### Map
+
+Map is like the standard `map[any]any` but is safe for concurrent use by multiple goroutines without additional locking or coordination. Loads, stores, and deletes are spread over constant time.
+
+#### Why do we need it?
+
+The Map type is speicialized. Most code should use a plain Go map instead, with separate locking or coordination, for better type safety and to make it easier to maintain other invariants along with the map content.
+
+The map type is optimized for two common use cases:
+
+1. When the entry for a given key is only ever written once but read many times, as in caches that only grow.
+2. When multiple goroutines read, write, and overwrite entries for disjoint sets of keys. In these two cases, the use of a `sync.Map` may significantly reduce lock contention compared to a Go map paired with a separate `Mutex` or `RWMutex`.
+
+> [NOTE]
+> The zero Map is empty and ready for use. A Map must not be copied after first use
+
+#### Usage
+
+`sync.Map` gives us the following methods:
+
+1. `Delete()` deletes the value for a key.
+2. `Load(key any)` returns the value stored in the map for a key, or nil if no value is present.
+3. `LoadAndDelete(key any)` deletes the value for a key, returning the previous value if any. The loaded result reports whether the key was present.
+4. `LoadOrState(key, value any)` returns the existing value for the key if present. Otherwise, it stores and returns the given value. The loaded result is true if the value was loaded, and false if stored.
+5. `Store(key, value any)` sets the value for a key.
+6. `Range(f func(key, value any) bool)` calls `f` sequentially for each key and value present in the map. If `f` returns false, the range stops the iteration.
+
+> [!NOTE]
+> Range does not necessarily correspond to any consistent snapshot of the Map's contents.
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+func main(){
+  var wg sync.WaitGroup
+  var m sync.Map
+
+  wg.Add(10)
+  for i := 0; i<=4; i++{
+    go func(k int){
+      v := fmt.Sprintf("value %v", k)
+
+      fmt.Println("Writing:", v)
+      m.Store(k, v)
+      wg.Done()
+    }(i)
+  }
+
+  for i := 0; i<=4; i++{
+    go func(k int){
+      v, _ := m.Load(k)
+      fmt.Println("Reading:", v)
+      wg.Done()
+    }(i)
+  }
+  wg.Wait()
+}
+```
+
+```bash
+$ go run main.go
+Reading: <nil>
+Writing: value 0
+Writing: value 1
+Writing: value 2
+Writing: value 3
+Writing: value 4
+Reading: value 0
+Reading: value 1
+Reading: value 2
+Reading: value 3
+```
+
+### Atomic
+
+Package atomic provides low-level atomic memory primitives for integers and pointers that are useful for implementing synchronization algorithms.
+
+#### Usage
+
+`atomic` package provides _serverl functions_ that
+do the following 5 operations for `int`, `uint`, and `uintptr` types:
+
+1. Add
+2. Load
+3. Store
+4. Swap
+5. Compare and Swap
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+  "sync/atomic"
+)
+
+func add(w *sync.WaitGroup, num *int32){
+  defer w.Done()
+  atomic.AddInt32(num, 1)
+}
+
+func main(){
+  var n int32 = 0
+  var wg sync.WaitGroup
+
+  wg.Add(1000)
+  for i:=0; i< 1000; i=i+1{
+    go add(&wg, &n)
+  }
+
+  wg.Wait()
+  fmt.Println("Result:", n)
+}
+```
+
+`atomic.AddInt32` guarantees that the result of `n` will be 1000 as the instruction execution of atomic operations cannot be interrupted.
+
+```bash
+$ go run main.go
+Result: 1000
+```
+
+## Advanced Concurrency Patterns
+
+### Generator
+
+![alt text](image-12.png)
+
+Generator pattern is used to generate a sequence of values which is used to produce some output.
+
+we have a `generator` function that simply returns a channel from which we can read the values.
+
+This works on the fact that sends and receives block until both the sender and receiver are ready. This property allowed us to wait until the next value is requested.
+
+```go
+package main
+
+import "fmt"
+
+func main(){
+  ch := generator()
+  for i:=0; i<5; i++{
+    value := <-ch
+    fmt.Println("Value:", value)
+  }
+}
+
+func generator() <-chan int{
+  ch := make(chan int)
+
+  go func(){
+    for i:=0; ; i++{
+      ch <- i
+    }
+  }()
+  return ch
+}
+```
+
+```bash
+$ go run main.go
+Value: 0
+Value: 1
+Value: 2
+Value: 3
+Value: 4
+```
+
+This is similar behavior as `yield` in JS and Python.
+
+### Fan-in
+
+![alt text](image-13.png)
+
+The fan-in pattern combines multiple inputs into one single output channel. Basically, we multiplex our inputs.
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+func main() {
+  i1 := generateWork([]int{0, 2, 6, 8})
+  i2 := generateWork([]int{1, 3, 5, 7})
+
+  out := fanIn(i1, i2)
+  for value := range out {
+    fmt.Println("Value:", value)
+  }
+}
+
+func fanIn(inputs ...<-chan int) <-chan int {
+  var wg sync.WaitGroup
+  out := make(chan int)
+
+  wg.Add(len(inputs))
+
+  for _, in := range inputs{
+    go func(ch <- chan int){
+      for {
+        value, ok := <-ch
+        if !ok{
+          wg.Done()
+          break
+        }
+        out <- value
+      }
+    }(in)
+  }
+  go func(){
+    wg.Wait()
+    close(out)
+  }()
+  return out
+}
+
+func generateWork(work []int) <-chan int{
+  ch := make(chan int)
+  go func(){
+    defer close(ch)
+
+    for _, w := range work{
+      ch <- w
+    }
+  }()
+  return ch
+}
+```
+
+```bash
+$ go run main.go
+Value: 0
+Value: 1
+Value: 2
+Value: 6
+Value: 8
+Value: 3
+Value: 5
+Value: 7
+```
+
+### Fan-out
+
+![alt text](image-14.png)
+
+Fan-out patterns allow us to essentially split our single input channel into multiple output channels. This is a useful pattern to distribute work items into multiple uniform actos.
+
+> [!NOTE]
+> fan-out pattern is different from pub/sub.
+
+```go
+package main
+
+import "fmt"
+
+func main(){
+  work := []int{1, 2, 3, 4, 5, 6, 7, 8}
+  in := generateWork(work)
+
+  out1 := fanOut(in)
+  out2 := fanOut(in)
+  out3 := fanOut(in)
+  out4 := fanOut(in)
+
+  for range work {
+    select{
+      case value := <-out1:
+        fmt.Println("Output 1 got:", value)
+      case value := <-out2:
+        fmt.Println("Output 2 got:", value)
+      case value := <-out3:
+        fmt.Println("Output 3 got:", value)
+      case value := <-out4:
+        fmt.Println("Output 4 got:", value)
+    }
+  }
+}
+
+func fanOut(in <-chan int) <-chan int{
+  out := make(chan int)
+
+  go func(){
+    defer close(out)
+    for data := range in{
+      out <- data
+    }
+  }()
+  return out
+}
+
+func generateWork(work []int) <-chan int{
+  ch := make(chan int)
+
+  go func(){
+    defer close(ch)
+
+    for _, w := range work{
+      ch <- w
+    }
+  }()
+  return ch
+}
+```
+
+```bash
+$ go run main.go
+Output 1 got: 1
+Output 2 got: 3
+Output 4 got: 4
+Output 1 got: 5
+Output 3 got: 2
+Output 3 got: 6
+Output 3 got: 7
+Output 1 got: 8
+```
+
+### Pipeline
+
+![alt text](image-15.png)
+
+Pipeline pattern is a series of stages connected by channels, where each stage is a group of goroutines running the same function.
+
+In each stage, the goroutines:
+
+- Receive values from upstream via inbound channels
+- Perform some function on that data, usually producing new values.
+- Send values downstream via outbound channels
+
+Each stage has any number of inbound and outbound channels, except the first and last stages, which have only outbound or inbound channels, respectively. The first stage is sometimes called the source or producer; the last stage is the sink or consumer.
+
+By using a pipeline, we separate the concerns of each stage, which provides numerous benefits such as:
+
+1. Modify stages independent of one another.
+2. Mix and match how stages are combined independently of modifying the stage.
+
+```go
+package main
+
+import (
+  "fmt"
+  "math"
+)
+
+func main(){
+  in := generateWork([]int{0, 1, 2, 3, 4, 5, 6, 7, 8})
+
+  out := filter(in)     // Filter odd number
+  out := square(out)    // Square the input
+  out := half(out)      // Half the input
+
+  for value := range out{
+    fmt.Println(value)
+  }
+}
+
+func filter(in <-chan int) <-chan int {
+  out := make(chan int)
+
+  go func(){
+    defer close(out)
+    for i:= range in{
+      if i%2 == 0{
+        out <- i
+      }
+    }
+  }()
+  return out
+}
+
+func square(in <-chan int) <-chan int{
+  out := make(chan int)
+  go func(){
+    defer close(out)
+
+    for i:= range in{
+      value := math.Pow(float64(i), 2)
+      out <- int(value)
+    }
+  }()
+  return out
+}
+
+func half(in <-chan int) <-chan int{
+  out := make(chan int)
+
+  go func(){
+    defer close(out)
+    for i := range in{
+      value := i/2
+      out <- value
+    }
+  }()
+  return out
+}
+
+func generateWork(work []int) <-chan int{
+  ch := make(chan int)
+  go func(){
+    defer close(ch)
+
+    for _, w := range work{
+      ch <- w
+    }
+  }()
+  return ch
+}
+```
+
+```bash
+$ go run main.go
+0
+2
+8
+18
+32
+```
+
+### Worker Pool
+
+![alt text](image-16.png)
+
+The worker pool is a really powerful pattern that lets us distributes the work across multiple workers (goroutines) concurrently.
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+)
+
+const totalJobs = 4
+const totalWorkers = 2
+
+func main(){
+  jobs := make(chan int, totalJobs)
+  results := make(chan int, totalJobs)
+
+  for w := 1; w<= totalWorkers; w++{
+    go worker(w, jobs, results)
+  }
+
+  // Send jobs
+  for j:=1; j<= totalJobs; j++{
+    jobs<-j
+  }
+
+  close(jobs)
+
+  // Receive results
+  for a := 1; a<= totalJobs; a++{
+    <-results
+  }
+  close(results)
+}
+
+func worker(id int, jobs <-chan int, result chan<-int){
+  var wg sync.WaitGroup
+  for j := range jobs{
+    wg.Add(1)
+
+    go func(job int){
+      defer wg.Done()
+      fmt.Printf("Worker %d started job %d\n", id, job)
+
+      // Do work and send result
+      result := job * 2
+      results <- result
+
+      fmt.Printf("Worker %d finished job %d\n", id, job)
+    }(j)
+  }
+  wg.Wait()
+}
+```
+
+```bash
+$ go run main.go
+Worker 2 started job 4
+Worker 2 started job 1
+Worker 1 started job 3
+Worker 2 started job 2
+Worker 2 finished job 1
+Worker 1 finished job 3
+Worker 2 finished job 2
+Worker 2 finished job 4
+```
+
+Jobs were distributed among workers.
+
+### Queuing
+
+Queuing pattern allows us to process `n` number of items at a time.
+
+```go
+package main
+
+import (
+  "fmt"
+  "sync"
+  "time"
+)
+
+const limit = 2
+const work = 10
+
+func main(){
+  var wg sync.WaitGroup
+
+  fmt.Println("Queue limit:", limit)
+  queue := make(chan struct{}, limit)
+
+  wg.Add(work)
+  for w := 1; w <= work; w++ {
+    process(w, queue, &wg)
+  }
+
+  wg.Wait()
+  close(queue)
+  fmt.Println("Work complete")
+}
+
+func process(work int, queue chan struct{}, wg *sync.WaitGroup){
+  queue <- struct{}{}
+
+  go func(){
+    defer wg.Done()
+    time.Sleep(1 * time.Second)
+    fmt.Println("Procesed:", work)
+    <-queue
+  }()
+}
+```
+
+```bash
+$ go run main.go
+Queue limit: 2
+Processed: 1
+Processed: 2
+Processed: 4
+Processed: 3
+Processed: 5
+Processed: 6
+Processed: 8
+Processed: 7
+Processed: 9
+Processed: 10
+Work complete
+```
+
+### Additional patterns
+
+- Tee channel
+- Bridge channel
+- Ring buffer channel
+- Bounded parallelism
+
+## Context
+
+In concurrent program, it's often necessary to preempt operations because of timeouts, cancellations, or failure of another portion of the system.
+
+The `context` package makes it easy to pass request-scoped values, cancellation signals, and deadlines across API boundries to all goroutines involved in handling a request.
+
+### Types
+
+#### Context
+
+The `Context` is an `interface` type that is defined as follows:
+
+```go
+type Context interface{
+  Deadline() (dealline time.Time, ok bool)
+  Done() <-chan struct{}
+  Err() error
+  Value(key any) any
+}
+```
