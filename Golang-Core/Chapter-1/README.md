@@ -189,6 +189,16 @@
   - [Context](#context)
     - [Types](#types)
       - [Context](#context-1)
+      - [CancelFunc](#cancelfunc)
+        - [Usage](#usage-8)
+          - [Background](#background)
+          - [TODO](#todo)
+          - [WithValue](#withvalue)
+      - [WithCancel](#withcancel)
+      - [WithDeadline](#withdeadline)
+      - [WithTimeout](#withtimeout)
+  - [Next Steps:](#next-steps)
+  - [Reference:](#reference)
 
 ## Variables and Data Types
 
@@ -5682,3 +5692,199 @@ type Context interface{
   Value(key any) any
 }
 ```
+
+The `Context` type has the following methods:
+
+- `Done() <- chan struct{}` returns a channel that is closed when the contet is canceled or times out. Done may return `nil` if the context can never be canceled.
+- `Deadline() (deadline time.Time, ok bool)` returns the time when the context will be canceled or timed out.
+- `Err() error` returns an error that explains why the Done channel was closed. If Done is not closed yet, it returns `nil`.
+- `Value(key any) any` returns the value associated with the key or `nil` if none.
+
+#### CancelFunc
+
+A `CancelFunc` tells an operation to abandon its work and it does not wait for the work to stop. If it is called by multiple goroutines simultaneously, after the first call, subsequent calls to a `CancelFunc` does nothing.
+
+```go
+type CancelFunc func()
+```
+
+##### Usage
+
+functions that are exposed by the `context` package:
+
+###### Background
+
+Background returns a non-nil, empty `Context`. It is never canceled, has no values, and has no deadline.
+
+It is typically used by the main function, initialization, and tests, and as the top-level Context for incoming requests.
+
+```go
+func Background() Context
+```
+
+###### TODO
+
+Similar to the `Background` function `TODO` function also returns a non-nil, empty `Context`.
+
+However, it should only be used when we are not sure what context to use or if the function has not been updated to receive a context. This means we plan to add context to the function in the future.
+
+```go
+func TODO() Context
+```
+
+###### WithValue
+
+This function takes in a context and returns a derived context where the value `val` is associated with `key` and flows through the context tree with the context.
+
+This means that once you get a context with value, any context that derives from this gets this value.
+
+It is recommended to pass in critical parameters using context values, instead, functions should accept those values in the signature making it explicit.
+
+```go
+func WithValue(parent Context, key, val any) Context
+```
+
+Example:
+
+```go
+package main
+
+import (
+  "context"
+  "fmt"
+)
+
+func main(){
+  processId := "abc-xyz"
+
+  ctx := context.Background()
+  ctx = context.WithValue(ctx, "processId", processId)
+
+  ProcessRequest(ctx)
+}
+
+func ProcessRequest(ctx context.Context){
+  value := ctx.Value("processId")
+  fmt.Printf("Processing ID: %v", value)
+}
+```
+
+```bash
+$ go run main.go
+Processing ID: abc-xyz
+```
+
+#### WithCancel
+
+This function creates a new context from the parent context and derived context and the cancel function. The parent can be a `context.Background` or a context that was passed into the function.
+
+Canceling this context releases resources associated with it, so the code should call cancel as soon as the operations running in this context is completed.
+
+Passing around the `cancel` function is not recommended as it may lead to unexpected behavior.
+
+```go
+func WithCancel(parent Context) (ctx Context, cancel CancelFunc)
+```
+
+#### WithDeadline
+
+This function returns a derived context from its parent that gets canceled when the deadline exceeds or the cancel function is called.
+
+For example, we can create a context that will automatically get canceled at a certain time in the future and pass that around in child functions. When that context gets canceled because of the deadline running out, all the functions that got the context gets notified to stop work and return.
+
+```go
+func WithDeadline (parent Context, d time.Time) (Context, CancelFunc)
+```
+
+#### WithTimeout
+
+This function is just a wrapper around the `WithDeadline` function with the added timeout.
+
+```go
+func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc){
+  return WithDeadline(parent, time.Now().Add(timeout))
+}
+```
+
+Example:
+
+```go
+package main
+
+import (
+  "fmt"
+  "net/http"
+  "time"
+)
+
+func handleRequest(w http.ResponseWriter, req *http.Request){
+  fmt.Println("Handler started")
+  context := req.Context()
+
+  select{
+    // Simulating some work by the server, waits 5 seconds and then responds.
+    case <- time.After(5 * time.Second):
+      fmt.Println(w, "Response from the server")
+
+    // Handling request cancellation
+    case <- context.Done():
+      err := context.Err()
+      fmt.println("Error:", err)
+  }
+  fmt.Println("Handler complete")
+}
+
+func main(){
+  http.HandleFunc("/request", handleRequest)
+
+  fmt.Println("Server is running...")
+  http.ListenAndServe(":4000", nil)
+}
+```
+
+open one terminal and run
+
+```bash
+$ go run main.go
+Server is running...
+Handler started
+Handler complete
+```
+
+in second terminal, request to our server. And if we wait for 5 seconds, we get a response back.
+
+```bash
+$ curl localhost:4000/request
+Response from the server
+```
+
+Note: we can use `ctrl + c` to cancel the request midway.
+
+```bash
+$ curl localhost:4000/request
+^C
+```
+
+And as we can see, we're able to detect the cancellation of the request because of the request context.
+
+```go
+$ go run main.go
+Server is running...
+Handler started
+Error: context canceled
+Handler complete
+```
+
+## Next Steps:
+
+> [!IMPORTANT]
+> [Build a REST API with Go - For Beginners](https://www.youtube.com/watch?v=bFYZrEuEDLE)
+> [Connecting to PostgreSQL using GORM](https://www.youtube.com/watch?v=Yk5ZjKq4qDQ)
+> [Web Scraping with Go](https://www.youtube.com/watch?v=sU_BwzOxl54)
+> [Dockerize Your Go app](https://www.youtube.com/watch?v=zUc2LihXjlw)
+> [DevOps RoadMap](https://www.youtube.com/watch?v=np_seazJL3Q)
+
+## Reference:
+
+- [Go by KaranPratapSign](https://github.com/karanpratapsingh/learn-go?tab=readme-ov-file)
+- [Official Go documentation](https://go.dev/doc)
