@@ -198,7 +198,7 @@
       - [WithDeadline](#withdeadline)
       - [WithTimeout](#withtimeout)
   - [Next Steps:](#next-steps)
-  - [Reference:](#reference)
+  - [Reference](#reference)
 
 ## Variables and Data Types
 
@@ -5878,13 +5878,14 @@ Handler complete
 ## Next Steps:
 
 > [!IMPORTANT]
-> [Build a REST API with Go - For Beginners](https://www.youtube.com/watch?v=bFYZrEuEDLE)
-> [Connecting to PostgreSQL using GORM](https://www.youtube.com/watch?v=Yk5ZjKq4qDQ)
-> [Web Scraping with Go](https://www.youtube.com/watch?v=sU_BwzOxl54)
-> [Dockerize Your Go app](https://www.youtube.com/watch?v=zUc2LihXjlw)
-> [DevOps RoadMap](https://www.youtube.com/watch?v=np_seazJL3Q)
 
-## Reference:
+- [Build a REST API with Go - For Beginners](https://www.youtube.com/watch?v=bFYZrEuEDLE)
+- [Connecting to PostgreSQL using GORM](https://www.youtube.com/watch?v=Yk5ZjKq4qDQ)
+- [Web Scraping with Go](https://www.youtube.com/watch?v=sU_BwzOxl54)
+- [Dockerize Your Go app](https://www.youtube.com/watch?v=zUc2LihXjlw)
+- [DevOps RoadMap](https://www.youtube.com/watch?v=np_seazJL3Q)
+
+## Reference
 
 - [Go by KaranPratapSign](https://github.com/karanpratapsingh/learn-go?tab=readme-ov-file)
 - [Official Go documentation](https://go.dev/doc)
