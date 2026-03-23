@@ -34,4 +34,3 @@ Fundamental concepts of golangs
 # Clean Architecture
 1. coming soon
 
-# System Design 
