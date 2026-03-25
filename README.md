@@ -31,6 +31,6 @@ Fundamental concepts of golangs
 3. https://github.com/avelino/awesome-go?tab=readme-ov-file#artificial-intelligence
 
 
-# Clean Architecture
+# Clean Architecture Practice
 1. coming soon
 
