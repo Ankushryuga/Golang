@@ -1,4 +1,4 @@
-You need to internalize these principles:
+# You need to internalize these principles:
 
 - prefer clarity over cleverness
 - keep abstractions small
