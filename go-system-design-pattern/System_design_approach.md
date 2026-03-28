@@ -53,6 +53,10 @@ Identify and address bottlenecks, given the constraints. For example, do you nee
 3. Caching
 4. Database sharding
 
+> [!IMPORTANT]
+> Be ready for open systems.
+> Like for future changes.
+> To make future changes how can we make it open system for future contribution.
 
 > [!IMPORTANT]
 > Discuss potential solutions and trade-offs. Everything is a trade-off. Address bottlenecks using [principles of scalable system design]().
