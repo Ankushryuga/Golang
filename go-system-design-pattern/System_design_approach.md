@@ -44,7 +44,7 @@ Dive into details for each component. For example, if you were asked to design t
 >
 > 3. API and object-oriented design
 
-## Step 4: Scalre the design
+## Step 4: Scale the design
 
 Identify and address bottlenecks, given the constraints. For example, do you need the following to address scalability issues?
 
