@@ -32,5 +32,3 @@ Fundamental concepts of golangs
 
 
 # Clean Architecture Practice
-1. coming soon
-
