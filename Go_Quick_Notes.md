@@ -34,3 +34,5 @@ go.mod = “project identity + dependencies”
 - Download the Gin package
 - Add it to your go.mod
 - Save checksums in go.sum
+
+## 3. go tidy
