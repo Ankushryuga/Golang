@@ -36,3 +36,6 @@ go.mod = “project identity + dependencies”
 - Save checksums in go.sum
 
 ## 3. go tidy
+
+
+## 4. Lint : golangci-lint run -h
