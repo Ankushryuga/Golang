@@ -21,5 +21,7 @@ Fundamental concepts of golangs
 2. https://github.com/ollama/ollama/tree/main
 3. https://github.com/avelino/awesome-go?tab=readme-ov-file#artificial-intelligence
 
+### Go + GraphQL
+### Go + gRPC
 
 # Clean Architecture Practice
