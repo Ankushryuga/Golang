@@ -23,5 +23,5 @@ Fundamental concepts of golangs
 
 ### Go + GraphQL
 ### Go + gRPC
-
+### Go + Event Driven Architecture 
 # Clean Architecture Practice
