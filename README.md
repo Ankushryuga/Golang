@@ -23,5 +23,6 @@ Fundamental concepts of golangs
 
 ### Go + GraphQL
 ### Go + gRPC
-### Go + Event Driven Architecture 
+### Go + Event Driven Architecture
+### Go + Redis + MySQL + Cassandra + PostgreSQL + MongoDB
 # Clean Architecture Practice
