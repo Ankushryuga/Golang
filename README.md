@@ -1,8 +1,3 @@
-# Golang: its a statically typed, 
-Fundamental concepts of golangs
-
-6. Fundamental contains all core programing fundaments.
-
 # Golang Interview Questions and Answer Resources:
 1. https://roadmap.sh/questions/golang
 2. https://medium.com/@ninucium/go-interview-questions-part-1-pointers-channels-and-range-67c61345cf3c
