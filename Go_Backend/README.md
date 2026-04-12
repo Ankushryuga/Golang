@@ -25,3 +25,5 @@ if err := processTruck(truck); err != nil { // benefit of it is that err variabl
 }
 ```
 
+
+## Inteface 
