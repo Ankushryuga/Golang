@@ -30,6 +30,7 @@ f1 := u.Show
 f2 := User.Show
 ```
 
+Q5: does methods works in goroutines?
 
 Q5: Why would you choose all pointer receiver on a type even for read-only methods?
 Ans:
