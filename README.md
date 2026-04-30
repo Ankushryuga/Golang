@@ -24,7 +24,7 @@
 
 
 ## Golang Tricky Interview Questions 
-- [Interfaces]
-- [Methods]
-- [GoRoutines]
-- [Concurrency]
+- [Interfaces](url)
+- [Methods](url)
+- [GoRoutines](url)
+- [Concurrency](url)
